@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, ReactNode } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import ScrollReveal from './components/ScrollReveal';
 
 const VIDEO_URL = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260521_064421_279656fd-e76f-40a0-8fed-7456d4f7715a.mp4';
@@ -102,6 +102,57 @@ function CTAButton({ text, variant = "dark" }: CTAButtonProps) {
       <span>{text}</span>
       <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1 shrink-0" />
     </div>
+  );
+}
+
+// Stateful FAQ Item component with elegant motion height transitions
+interface FAQItemProps {
+  question: string;
+  answer: string;
+  index: number;
+}
+
+function FAQItem({ question, answer, index }: FAQItemProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Reveal delay={index * 0.05}>
+      <div 
+        className="border-b border-white/10 last:border-b-0 w-full"
+        id={`faq-item-${index}`}
+      >
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full flex items-center justify-between py-5 text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-white group select-none cursor-pointer"
+          aria-expanded={isOpen}
+        >
+          <span className="font-sans text-[15px] md:text-base font-semibold text-white/90 group-hover:text-white transition-colors duration-200">
+            {question}
+          </span>
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="text-white/40 group-hover:text-white shrink-0 ml-4 transition-colors duration-200"
+          >
+            <ChevronDown className="w-4 h-4 md:w-5 h-5" />
+          </motion.div>
+        </button>
+        
+        <motion.div
+          initial={false}
+          animate={{ 
+            height: isOpen ? "auto" : 0,
+            opacity: isOpen ? 1 : 0
+          }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="overflow-hidden"
+        >
+          <p className="pb-5 text-[13px] md:text-sm text-white/60 leading-relaxed font-light font-sans pr-6">
+            {answer}
+          </p>
+        </motion.div>
+      </div>
+    </Reveal>
   );
 }
 
@@ -262,7 +313,7 @@ export default function App() {
               <NavItem text="Türöffnung" href="#leistungen" />
               <NavItem text="Autoöffnung" href="#leistungen" />
               <NavItem text="Sicherheit" href="#leistungen" />
-              <NavItem text="Preise" href="#leistungen" />
+              <NavItem text="Preise &amp; FAQ" href="#faq" />
             </nav>
             <a 
               href="tel:+492014764314" 
@@ -428,8 +479,50 @@ export default function App() {
           </div>
         </section>
 
+        {/* SECTION 2.8: MINIMALIST FAQ SECTION */}
+        <section className="w-[90%] mx-auto py-16 md:py-24 pointer-events-auto" id="faq">
+          <div className="max-w-[800px] w-full mx-auto bg-white/4 backdrop-blur-[40px] border border-white/10 p-6 md:p-12 rounded-sm shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+            <Reveal delay={0.1}>
+              <div className="text-[11px] font-mono tracking-widest text-white/40 uppercase mb-4 text-center select-none">
+                HÄUFIG GESTELLTE FRAGEN
+              </div>
+              <h2 className="text-[clamp(1.5rem,3vw,2.5rem)] leading-tight font-medium tracking-tight text-white mb-10 text-center select-none">
+                Preise &amp; Ablauf im Überblick.
+              </h2>
+            </Reveal>
+
+            <div className="flex flex-col mt-4">
+              <FAQItem 
+                index={0}
+                question="Wie lange dauert es, bis der Schlüsseldienst vor Ort ist?"
+                answer="Wir sind als lokaler Anbieter direkt in Essen für Sie unterwegs. Im Durchschnitt erreichen unsere fachmännischen Techniker Ihren Standort innerhalb von 20 bis 30 Minuten nach Ihrem Anruf."
+              />
+              <FAQItem 
+                index={1}
+                question="Mit welchen Kosten muss ich für eine Notöffnung rechnen?"
+                answer="Bei Türengel legen wir Wert auf faire, transparente Kommunikation. Eine zerstörungsfreie Notöffnung für eine zugefallene Tür erhalten Sie bereits zu preiswerten Konditionen. Den konkreten Festpreis besprechen wir stets präzise vor Arbeitsbeginn, damit Sie absolute Preissicherheit haben – ganz ohne versteckte Kosten."
+              />
+              <FAQItem 
+                index={2}
+                question="Wird meine Tür beim Öffnen beschädigt?"
+                answer="Zu 99% gelingt unseren geschulten Profi-Technikern eine völlig schadenfreie und zerstörungsfreie Öffnung bei zugefallenen Haus- oder Wohnungstüren, ohne Kratzer am Türblatt oder Zylinder zu hinterlassen."
+              />
+              <FAQItem 
+                index={3}
+                question="Arbeiten Sie auch nachts oder an Feiertagen?"
+                answer="Ja, unser Schlüsselnotdienst steht Ihnen 24 Stunden am Tag, 7 Tage die Woche, an 365 Tagen im Jahr zur Verfügung. Ganz ohne unpersönliche Callcenter-Zwischenstationen sprechen Sie direkt mit uns am Telefon."
+              />
+              <FAQItem 
+                index={4}
+                question="Welche Zahlungsmittel werden akzeptiert?"
+                answer="Sie können bei uns ganz unkompliziert bar oder bequem per EC-Karte / Girocard direkt vor Ort beim Techniker bezahlen. Sie erhalten selbstverständlich eine rechtskonforme, ordentliche Rechnung für Ihre Unterlagen."
+              />
+            </div>
+          </div>
+        </section>
+
         {/* SECTION 2.5: SPACER */}
-        <div className="h-[200px] w-full" />
+        <div className="h-[120px] w-full" />
 
         {/* SECTION 3: FOOTER CARD (SCROLL TRIGGER REFERENCE CONTAINER) */}
         <footer 
