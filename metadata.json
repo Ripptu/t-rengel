@@ -1,0 +1,6 @@
+{
+  "name": "Türengel",
+  "description": "Premium 24 Std Schlüsseldienst & Schlüsselnotdienst in Essen mit zerstörungsfreien Türöffnungen und transparenten Festpreisen.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
