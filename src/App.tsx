@@ -108,96 +108,130 @@ function CTAButton({ text, variant = "dark" }: CTAButtonProps) {
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(true); // Load instantly without pre-loader
   const screen3Ref = useRef<HTMLDivElement>(null);
 
   const { scrollY } = useScroll();
   const headerY = useTransform(scrollY, [0, 500, 800], [0, 0, -150]);
 
-  // Video Loading Check with safety timeout & fallback support
+  // Video initialization and mobile compatibility setup
   useEffect(() => {
     const video = videoRef.current;
-    
-    // Safety fallback: if video is slow or fails, force load after 1.5 seconds
-    const safetyTimeout = setTimeout(() => {
-      setIsLoaded(true);
-    }, 1500);
-
     if (!video) return;
 
-    if (video.readyState >= 4) {
-      setIsLoaded(true);
-      clearTimeout(safetyTimeout);
-    }
+    // Force strict low-power and iOS properties programmatically
+    video.setAttribute('muted', 'true');
+    video.setAttribute('playsinline', 'true');
+    video.setAttribute('webkit-playsinline', 'true');
+    video.muted = true;
+    video.playsInline = true;
 
-    const handleCanPlay = () => {
-      setIsLoaded(true);
-      clearTimeout(safetyTimeout);
+    // Prime the video context so mobile browsers don't show a black screen
+    const primeVideo = async () => {
+      try {
+        video.load();
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          video.pause();
+        }
+      } catch (err) {
+        console.log("Normal mobile auto-play restriction; unlocking will occur on interaction.", err);
+      }
     };
 
-    const handleError = () => {
-      setIsLoaded(true);
-      clearTimeout(safetyTimeout);
+    primeVideo();
+
+    // Secondary unlock trigger: prime on first touch or scroll interaction to bypass mobile browser sandboxes safely
+    const handleGesture = () => {
+      if (video) {
+        video.play().then(() => {
+          video.pause();
+        }).catch(() => {});
+      }
+      window.removeEventListener('touchstart', handleGesture);
+      window.removeEventListener('scroll', handleGesture);
     };
 
-    video.addEventListener('canplaythrough', handleCanPlay);
-    video.addEventListener('error', handleError);
-    video.load();
+    window.addEventListener('touchstart', handleGesture, { passive: true });
+    window.addEventListener('scroll', handleGesture, { passive: true });
 
     return () => {
-      clearTimeout(safetyTimeout);
-      video.removeEventListener('canplaythrough', handleCanPlay);
-      video.removeEventListener('error', handleError);
+      window.removeEventListener('touchstart', handleGesture);
+      window.removeEventListener('scroll', handleGesture);
     };
   }, []);
 
-  // Scroll Video Frame scrubbing utilizing seeking guard to prevent tearing
+  // Multi-platform ultra-smooth scroll-to-video-frame interpolation controller
   useEffect(() => {
-    if (!isLoaded) return;
     const video = videoRef.current;
     if (!video) return;
 
+    let targetTime = 0;
+    let interpolatedTime = 0;
+    let rafId: number;
+
+    const updateFrame = () => {
+      if (!video.duration || isNaN(video.duration) || !isFinite(video.duration)) {
+        rafId = requestAnimationFrame(updateFrame);
+        return;
+      }
+
+      // Smooth interpolation physics
+      const ease = 0.085;
+      interpolatedTime += (targetTime - interpolatedTime) * ease;
+
+      // Update frame render state
+      const timeDiff = Math.abs(video.currentTime - interpolatedTime);
+      if (timeDiff > 0.012) {
+        video.currentTime = Math.max(0, Math.min(video.duration - 0.02, interpolatedTime));
+      }
+
+      rafId = requestAnimationFrame(updateFrame);
+    };
+
     const handleScroll = () => {
-      if (!screen3Ref.current || video.seeking) return;
-      if (!video.duration || isNaN(video.duration) || !isFinite(video.duration)) return;
+      if (!screen3Ref.current || !video.duration) return;
 
       const rect = screen3Ref.current.getBoundingClientRect();
       const absoluteTop = window.scrollY + rect.top;
-      const stopScroll = Math.max(1, absoluteTop - (window.innerHeight * 0.2));
+      const stopScroll = Math.max(1, absoluteTop - (window.innerHeight * 0.15));
       const scrollFraction = Math.max(0, Math.min(1, window.scrollY / stopScroll));
-      video.currentTime = scrollFraction * video.duration;
+      
+      targetTime = scrollFraction * video.duration;
     };
+
+    // Initialize animation loop
+    rafId = requestAnimationFrame(updateFrame);
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isLoaded]);
+    // Hook metadata load to align duration instantly
+    const handleMetadata = () => {
+      handleScroll();
+    };
+    video.addEventListener('loadedmetadata', handleMetadata);
 
-  // Loader screen
-  if (!isLoaded) {
-    return (
-      <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
-        <div className="text-[10px] font-mono tracking-widest mb-4 text-white/50">
-          LOADING
-        </div>
-        <div className="w-64 h-[1px] bg-white/10 mt-8 overflow-hidden">
-          <div className="h-full bg-white w-1/3 animate-pulse" />
-        </div>
-      </div>
-    );
-  }
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', handleScroll);
+      video.removeEventListener('loadedmetadata', handleMetadata);
+    };
+  }, []);
 
   return (
     <div className="relative min-h-screen bg-black font-sans text-white overflow-x-hidden antialiased selection:bg-white selection:text-black">
       
-      {/* 1. Fixed Video Background */}
-      <div ref={videoContainerRef} className="fixed inset-0 z-0 bg-black overflow-hidden pointer-events-none">
+      {/* 1. Fixed Video Background with premium dark radial gradient fallback */}
+      <div ref={videoContainerRef} className="fixed inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-900 via-stone-950 to-black overflow-hidden pointer-events-none">
         <video
           ref={videoRef}
           src={VIDEO_URL}
           muted
           playsInline
+          autoPlay
+          loop
           preload="auto"
           className="absolute top-1/2 left-1/2 min-w-full min-h-full object-cover opacity-70"
           style={{
@@ -205,7 +239,7 @@ export default function App() {
           }}
         />
         {/* Subtle background vignette for absolute luxury darkness */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-zinc-950/25 to-black/85" />
       </div>
 
       {/* 2. Fixed Animated Header */}
