@@ -1,11 +1,11 @@
 // src/components/ui/cinematic-landing-hero.tsx
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { cn } from "@/lib/utils";
-import { Key, Shield, ShieldCheck, Phone, Check, Clock, UserCheck } from "lucide-react";
+import { Key, Shield, ShieldCheck, Phone, Check, Clock, UserCheck, ChevronDown } from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -245,16 +245,19 @@ export function CinematicHero({
     const isMobile = window.innerWidth < 768;
 
     const ctx = gsap.context(() => {
-      gsap.set(".text-track", { autoAlpha: 0, y: 60, scale: 0.85, filter: "blur(20px)", rotationX: -20 });
+      // Speed up heading load: start closer (y: 30 instead of 60), less heavy starting blur (12px instead of 20px)
+      gsap.set(".text-track", { autoAlpha: 0, y: 30, scale: 0.95, filter: "blur(12px)", rotationX: -10 });
       gsap.set(".text-days", { autoAlpha: 1, clipPath: "inset(0 100% 0 0)" });
+      gsap.set(".scroll-hint", { autoAlpha: 0, y: 15 });
       gsap.set(".main-card", { y: window.innerHeight + 200, autoAlpha: 1 });
       gsap.set([".card-left-text", ".card-right-text", ".mockup-scroll-wrapper", ".floating-badge", ".phone-widget"], { autoAlpha: 0 });
       gsap.set(".cta-wrapper", { autoAlpha: 0, scale: 0.8, filter: "blur(30px)" });
 
-      const introTl = gsap.timeline({ delay: 0.3 });
+      const introTl = gsap.timeline({ delay: 0.1 });
       introTl
-        .to(".text-track", { duration: 1.8, autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)", rotationX: 0, ease: "expo.out" })
-        .to(".text-days", { duration: 1.4, clipPath: "inset(0 0% 0 0)", ease: "power4.inOut" }, "-=1.0");
+        .to(".text-track", { duration: 0.7, autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)", rotationX: 0, ease: "power3.out" })
+        .to(".text-days", { duration: 0.7, clipPath: "inset(0 0% 0 0)", ease: "power3.out" }, "-=0.45")
+        .to(".scroll-hint", { duration: 0.6, autoAlpha: 1, y: 0, ease: "power3.out" }, "-=0.35");
 
       const scrollTl = gsap.timeline({
         scrollTrigger: {
@@ -269,6 +272,7 @@ export function CinematicHero({
 
       scrollTl
         .to([".hero-text-wrapper", ".bg-grid-theme"], { scale: 1.15, filter: "blur(20px)", opacity: 0.2, ease: "power2.inOut", duration: 2 }, 0)
+        .to(".scroll-hint", { autoAlpha: 0, y: 25, duration: 1.0, ease: "power2.inOut" }, 0)
         .to(".main-card", { y: 0, ease: "power3.inOut", duration: 2 }, 0)
         .to(".main-card", { width: "100%", height: "100%", borderRadius: "0px", ease: "power3.inOut", duration: 1.5 })
         .fromTo(".mockup-scroll-wrapper",
@@ -322,6 +326,12 @@ export function CinematicHero({
         <span className="text-days gsap-reveal text-silver-matte text-4xl md:text-7xl lg:text-[5.5rem] font-black tracking-widest text-[#2563EB] block">
           {tagline2}
         </span>
+      </div>
+
+      {/* MINIMALIST SCROLL HINT */}
+      <div className="scroll-hint absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 pointer-events-none select-none">
+        <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-bold text-neutral-400">Scroll nach unten</span>
+        <ChevronDown className="w-4 h-4 text-neutral-400 animate-bounce" />
       </div>
 
       {/* BACKGROUND LAYER 2: Tactile CTA Buttons */}
