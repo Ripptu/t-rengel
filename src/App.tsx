@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, ReactNode } from 'react';
+import Lenis from 'lenis';
 import { motion, useScroll, useTransform, useAnimation } from 'motion/react';
 import { 
   ArrowRight, 
@@ -29,22 +30,8 @@ import LocalMapSection from './components/LocalMapSection';
 // TÜRENGEL Logo: An elegant high-contrast locksmith wing and typographic symbol
 function TurengelLogo({ className = "h-5 text-neutral-900" }: { className?: string }) {
   return (
-    <div className={`flex items-center gap-2.5 select-none ${className}`}>
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-5.5 h-5.5 shrink-0 text-[#2563EB]"
-      >
-        <path d="M21 2c-4 0-7 2.5-9 6.5C10 4.5 7 2 3 2c0 8 4 12 9 13.5v6.5h2v-2.5h2v-2h-4v-2c5-1.5 9-5.5 9-13.5Z" />
-        <circle cx="12" cy="11" r="1.5" fill="currentColor" />
-      </svg>
-      <span className="font-sans font-bold tracking-tight text-sm md:text-base uppercase text-neutral-950">
-        Türengel<span className="text-[#2563EB] font-extrabold">.</span>
-      </span>
+    <div className={`flex items-center select-none ${className}`}>
+      <img src="https://s1.directupload.eu/images/260616/7dsqnojn.webp" alt="Türengel Logo" className="h-[40px] md:h-[50px] w-auto object-contain" />
     </div>
   );
 }
@@ -176,6 +163,22 @@ export default function App() {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (window.innerWidth >= 1024) {
+      const lenis = new Lenis({
+        lerp: 0.1,
+      });
+
+      function raf(time: number) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+      requestAnimationFrame(raf);
+
+      return () => lenis.destroy();
+    }
   }, []);
 
   useEffect(() => {
