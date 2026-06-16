@@ -320,6 +320,7 @@ export function CinematicHero({
 
       {/* BACKGROUND LAYER: Hero Texts */}
       <div className="hero-text-wrapper absolute z-10 flex flex-col items-center justify-center text-center w-screen px-4 will-change-transform transform-style-3d">
+        <img src="https://türengel.de/images/slider1.png" alt="Türengel" className="w-full max-w-[300px] mb-8" />
         <h1 className="text-track gsap-reveal text-3d-matte text-4xl md:text-7xl lg:text-[5.5rem] font-extrabold tracking-tight mb-2">
           {tagline1}
         </h1>

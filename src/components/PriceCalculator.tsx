@@ -43,7 +43,7 @@ export default function PriceCalculator() {
       surcharge = 30;
     }
 
-    let travel = region === 'essen' ? 25 : 35;
+    let travel = region === 'essen' ? 10 : 15;
 
     return {
       base,
@@ -188,8 +188,8 @@ export default function PriceCalculator() {
               </label>
               <div className="flex flex-col gap-2">
                 {[
-                  { id: 'essen', label: 'Essen Stadtgebiet', desc: 'Alle 50 lokalen Stadtteile', travel: '25 € Fest' },
-                  { id: 'umland', label: 'Angrenzendes Ruhrgebiet', desc: 'Mülheim, Bottrop, Gelsenkirchen etc.', travel: '35 € Fest' },
+                  { id: 'essen', label: 'Essen Stadtgebiet', desc: 'Alle 50 lokalen Stadtteile', travel: '10 € Fest' },
+                  { id: 'umland', label: 'Angrenzendes Ruhrgebiet', desc: 'Mülheim, Bottrop, Gelsenkirchen etc.', travel: '15 € Fest' },
                 ].map((item) => {
                   const isSelected = region === item.id;
                   return (

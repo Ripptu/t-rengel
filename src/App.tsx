@@ -1257,9 +1257,6 @@ export default function App() {
                   <a href="tel:+491776721642" className="text-neutral-900 font-extrabold hover:underline hover:text-[#2563EB] transition-all duration-200">
                     Mobil: 0177 6721642
                   </a>
-                  <a href="tel:+492014764314" className="text-neutral-900 font-bold hover:underline hover:text-[#2563EB] transition-all duration-200">
-                    Büro: 0201 476 43 14
-                  </a>
                   <span className="text-neutral-400">24 Std. besetzt</span>
                 </div>
               </div>
