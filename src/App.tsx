@@ -166,19 +166,39 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (window.innerWidth >= 1024) {
-      const lenis = new Lenis({
-        lerp: 0.1,
-      });
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    let lenis: Lenis | null = null;
+    let rafId: number | null = null;
 
-      function raf(time: number) {
-        lenis.raf(time);
-        requestAnimationFrame(raf);
+    const initLenis = () => {
+      if (mediaQuery.matches) {
+        if (!lenis) {
+          lenis = new Lenis({ lerp: 0.1 });
+          const raf = (time: number) => {
+            lenis?.raf(time);
+            rafId = requestAnimationFrame(raf);
+          };
+          rafId = requestAnimationFrame(raf);
+        }
+      } else {
+        if (lenis) {
+          lenis.destroy();
+          lenis = null;
+          if (rafId) cancelAnimationFrame(rafId);
+        }
       }
-      requestAnimationFrame(raf);
+    };
 
-      return () => lenis.destroy();
-    }
+    initLenis();
+    mediaQuery.addEventListener('change', initLenis);
+
+    return () => {
+      mediaQuery.removeEventListener('change', initLenis);
+      if (lenis) {
+        lenis.destroy();
+        if (rafId) cancelAnimationFrame(rafId);
+      }
+    };
   }, []);
 
   useEffect(() => {
