@@ -263,7 +263,7 @@ export function CinematicHero({
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top top",
-          end: "+=6500",
+          end: "+=3200",
           pin: true,
           scrub: 1,
           anticipatePin: 1,
@@ -320,7 +320,10 @@ export function CinematicHero({
 
       {/* BACKGROUND LAYER: Hero Texts */}
       <div className="hero-text-wrapper absolute z-10 flex flex-col items-center justify-center text-center w-screen px-4 will-change-transform transform-style-3d">
-        <img src="https://türengel.de/images/slider1.png" alt="Türengel" className="w-full max-w-[300px] mb-8" />
+        <img src="https://türengel.de/images/slider1.png" alt="Türengel" className="w-full max-w-[300px] mb-6" />
+        <span className="text-track gsap-reveal text-sm md:text-lg font-bold tracking-[0.25em] text-[#2563EB]/90 uppercase mb-4 block">
+          Schlüsseldienst Türengel
+        </span>
         <h1 className="text-track gsap-reveal text-3d-matte text-4xl md:text-7xl lg:text-[5.5rem] font-extrabold tracking-tight mb-2">
           {tagline1}
         </h1>
