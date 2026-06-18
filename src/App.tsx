@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, ReactNode } from 'react';
 import Lenis from 'lenis';
-import { motion, useScroll, useTransform, useAnimation } from 'motion/react';
+import { motion, useScroll, useTransform, useAnimation } from 'framer-motion';
 import { 
   ArrowRight, 
   ChevronDown, 
@@ -18,14 +18,12 @@ import {
   FileText,
   UserCheck
 } from 'lucide-react';
-import ScrollReveal from './components/ScrollReveal';
 import { InfiniteSlider } from '@/components/ui/infinite-slider';
 import { ProgressiveBlur } from '@/components/ui/progressive-blur';
 import { CinematicHero } from '@/components/ui/cinematic-landing-hero';
 import Impressum from './components/Impressum';
 import Datenschutz from './components/Datenschutz';
 import PriceCalculator from './components/PriceCalculator';
-import LocalMapSection from './components/LocalMapSection';
 
 // TÜRENGEL Logo: An elegant high-contrast locksmith wing and typographic symbol
 function TurengelLogo({ className = "h-5 text-neutral-900" }: { className?: string }) {
@@ -153,6 +151,67 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'impressum' | 'datenschutz'>('home');
   const [showStickyCall, setShowStickyCall] = useState(false);
 
+  // Parse path and extract city name
+  const [city, setCity] = useState(() => {
+    if (typeof window === 'undefined') return 'Essen';
+    const path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+    if (!path || path === 'index.html') return 'Essen';
+    try {
+      const decoded = decodeURIComponent(path).trim();
+      const segment = decoded.split('/')[0].split(/[#\?]/)[0];
+      if (!segment || segment.toLowerCase() === 'index.html' || segment.toLowerCase() === 'home') {
+        return 'Essen';
+      }
+      return segment
+        .split(/[\s_-]+/)
+        .map(word => {
+          if (!word) return '';
+          if (['an', 'der', 'am', 'im', 'in'].includes(word.toLowerCase())) {
+            return word.toLowerCase();
+          }
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join(' ');
+    } catch {
+      return 'Essen';
+    }
+  });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window === 'undefined') return;
+      const path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+      if (!path || path === 'index.html') {
+        setCity('Essen');
+        return;
+      }
+      try {
+        const decoded = decodeURIComponent(path).trim();
+        const segment = decoded.split('/')[0].split(/[#\?]/)[0];
+        if (!segment || segment.toLowerCase() === 'index.html' || segment.toLowerCase() === 'home') {
+          setCity('Essen');
+          return;
+        }
+        setCity(
+          segment
+            .split(/[\s_-]+/)
+            .map(word => {
+              if (!word) return '';
+              if (['an', 'der', 'am', 'im', 'in'].includes(word.toLowerCase())) {
+                return word.toLowerCase();
+              }
+              return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            })
+            .join(' ')
+        );
+      } catch {
+        setCity('Essen');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 400) {
@@ -167,13 +226,14 @@ export default function App() {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    let lenis: Lenis | null = null;
+    let lenis: any = null;
     let rafId: number | null = null;
 
     const initLenis = () => {
       if (mediaQuery.matches) {
         if (!lenis) {
-          lenis = new Lenis({ lerp: 0.1 });
+          const LenisConstructor = (Lenis as any).default || Lenis;
+          lenis = new LenisConstructor({ lerp: 0.1 });
           const raf = (time: number) => {
             lenis?.raf(time);
             rafId = requestAnimationFrame(raf);
@@ -190,10 +250,18 @@ export default function App() {
     };
 
     initLenis();
-    mediaQuery.addEventListener('change', initLenis);
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', initLenis);
+    } else if (mediaQuery.addListener) {
+      (mediaQuery as any).addListener(initLenis);
+    }
 
     return () => {
-      mediaQuery.removeEventListener('change', initLenis);
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', initLenis);
+      } else if (mediaQuery.removeListener) {
+        (mediaQuery as any).removeListener(initLenis);
+      }
       if (lenis) {
         lenis.destroy();
         if (rafId) cancelAnimationFrame(rafId);
@@ -206,10 +274,10 @@ export default function App() {
       const hash = window.location.hash;
       if (hash === '#terms') {
         setCurrentPage('impressum');
-        window.scrollTo({ top: 0, behavior: 'instant' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
       } else if (hash === '#privacy') {
         setCurrentPage('datenschutz');
-        window.scrollTo({ top: 0, behavior: 'instant' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
       } else if (hash.startsWith('#') && hash.length > 1) {
         setCurrentPage('home');
         setTimeout(() => {
@@ -221,7 +289,7 @@ export default function App() {
         }, 150);
       } else {
         setCurrentPage('home');
-        window.scrollTo({ top: 0, behavior: 'instant' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
       }
     };
 
@@ -230,31 +298,14 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
-  // City lists from the screenshot
-  const targetCitiesColumn1 = [
-    "Essen", "Bottrop", "Gelsenkirchen", "Duisburg", "Mülheim an der Ruhr", 
-    "Oberhausen", "Bochum", "Moers", "Marl", "Gladbeck", 
-    "Kamp-Lintfort", "Witten", "Herne", "Herten"
-  ];
-  const targetCitiesColumn2 = [
-    "Dorsten", "Dortmund", "Datteln", "Hagen", "Dinslaken", 
-    "Recklinghausen", "Ratingen", "Krefeld", "Kempen", "Düsseldorf", 
-    "Neuss", "Erkrath", "Wuppertal", "Heiligenhaus"
-  ];
-  const targetCitiesColumn3 = [
-    "Unna", "Bergkamen", "Oer-Erkenschwick", "Haltern am See", 
-    "Wetter Ruhr", "Sprockhövel", "Gevelsberg", "Ennepetal", 
-    "Wülfrath", "Rheinberg", "Velbert", "Castrop-Rauxel"
-  ];
-
   // Brand logos for the slider with their visual dimensions / aspects
   const brandLogos = [
-    { name: "DOM Security", url: "https://türengel.de/images/2026/03/25/dom-security-logo.svg" },
-    { name: "IKON ASSA ABLOY", url: "https://türengel.de/images/2026/03/25/70015_ikon_logo.png" },
-    { name: "BASI", url: "https://türengel.de/images/2026/03/25/basi.svg" },
-    { name: "EVVA", url: "https://türengel.de/images/2026/03/25/70411_1200px-evva-logo-svg.png" },
-    { name: "BKS", url: "https://türengel.de/images/2026/03/25/bks.svg" },
-    { name: "ABUS Security Tech Germany", url: "https://türengel.de/images/2026/03/25/abus_logo.svg.png" },
+    { name: "DOM Security", url: "https://vectorseek.com/wp-content/uploads/2024/02/Dom-Logo-Vector.svg--300x209.png" },
+    { name: "IKON ASSA ABLOY", url: "https://shop-fuer-sicherheit.de/media/image/79/ff/1c/70015_ikon_logo.png" },
+    { name: "BASI", url: "https://basi.eu/wp-content/uploads/2019/01/basi-logo-130x156.jpg" },
+    { name: "EVVA", url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/EVVA-Logo.svg/3840px-EVVA-Logo.svg.png" },
+    { name: "BKS", url: "https://www.bks.de/static/logo/bks.svg" },
+    { name: "ABUS Security Tech Germany", url: "https://upload.wikimedia.org/wikipedia/commons/6/61/ABUS_Logo.svg" },
   ];
 
   return (
@@ -320,7 +371,21 @@ export default function App() {
         {currentPage === 'home' && (
           <>
             {/* CINEMATIC HERO SEQUENCE */}
-            <CinematicHero />
+            <CinematicHero 
+              tagline1={
+                <>
+                  <span className="block mb-2">Türengel</span>
+                  <span className="block text-2xl md:text-[3.8rem] lg:text-[4.5rem] font-bold tracking-tight text-neutral-800 leading-none mt-2">
+                    Schlüsselnotdienst in {city}.
+                  </span>
+                </>
+              }
+              tagline2="In 20 Minuten vor Ort."
+              cardHeading="Schnell, fair & zum Festpreis."
+              cardDescription={`Komplette Notöffnung & Sicherheitstechnik für ${city} und das gesamte Ruhrgebiet. Wir bauen auf ehrliche Preise, zerstörungsfreie Methoden und sekundenschnelle Reaktion.`}
+              ctaHeading="Ihr Aufsperrnotdienst."
+              ctaDescription={`Schnelle Hilfe in ${city} und Umgebung. Wir garantieren zerstörungsfreie Türöffnungen zum fairen Festpreis – ohne Callcenter-Abzocke und dubiose Aufschläge. Wir sind in 20 Minuten bei Ihnen in ${city}.`}
+            />
 
         {/* NEW SECTION 2: WEICH AUSBLENDENDER LOGO SLIDER */}
         <section className="w-full py-6 bg-white/70 border-y border-neutral-200/50 backdrop-blur-sm relative overflow-hidden select-none">
@@ -483,7 +548,7 @@ export default function App() {
 
               <Reveal delay={0.3} className="pt-2">
                 <a href="tel:+491776721642">
-                  <CTAButton text="DIREKTHILFE ANFORDERN" variant="dark" />
+                  <CTAButton text={`DIREKT HILFE IN ${city.toUpperCase()} RUFEN`} variant="dark" />
                 </a>
               </Reveal>
             </div>
@@ -494,7 +559,7 @@ export default function App() {
                 <div className="relative p-2.5 bg-white border border-neutral-200/60 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.02)] scale-[1.01] overflow-hidden group">
                   <div className="absolute inset-0 bg-neutral-900/5 hover:bg-transparent transition-all z-10 pointer-events-none" />
                   <img 
-                    src="https://türengel.de/images/2026/03/24/tuerengel-schluesseldienst-oeffnen.png" 
+                    src="https://schluesseldienst-sarfeld.de/wp-content/uploads/2023/05/Schloss-oeffnen.jpg" 
                     alt="Türengel Schlüsseldienst Essen bei einer materialschonenden Türöffnung" 
                     width={480}
                     height={360}
@@ -617,10 +682,10 @@ export default function App() {
                 <div>
                   <div className="flex items-center gap-3 mb-4">
                     <span className="w-8 h-8 rounded-full bg-[#2563EB]/10 text-[#2563EB] flex items-center justify-center font-bold text-sm">1</span>
-                    <h3 className="text-lg font-black tracking-tight text-neutral-950">Zerstörungsfreie Türöffnung Kosten</h3>
+                    <h3 className="text-lg font-black tracking-tight text-neutral-950">{`Türöffnungen in ${city}`}</h3>
                   </div>
                   <p className="text-[13px] text-neutral-600 leading-relaxed font-normal">
-                    Wie hoch sind die <strong className="font-bold text-neutral-900">Zerstörungsfreie Türöffnung Kosten</strong> bei einer zugefallenen Wohnungstür? Wir setzen auf Preistransparenz: Bei Türengel erhalten Sie eine materialschonende Notöffnung werktags tagsüber bereits ab <strong className="font-bold text-neutral-950">69 € inklusive Mehrwertsteuer</strong>. Keine verdeckten Zusatzgebühren, transparent verhandelt vor dem Einsatz.
+                    Wie hoch sind die <strong className="font-bold text-neutral-900">{`Türöffnungen in ${city}`}</strong> bei einer zugefallenen Wohnungstür? Wir setzen auf Preistransparenz: Bei Türengel erhalten Sie eine materialschonende Notöffnung werktags tagsüber bereits ab <strong className="font-bold text-neutral-950">69 € inklusive Mehrwertsteuer</strong>. Keine verdeckten Zusatzgebühren, transparent verhandelt vor dem Einsatz.
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-neutral-100 flex items-center justify-between">
@@ -636,10 +701,10 @@ export default function App() {
                 <div>
                   <div className="flex items-center gap-3 mb-4">
                     <span className="w-8 h-8 rounded-full bg-[#2563EB]/10 text-[#2563EB] flex items-center justify-center font-bold text-sm">2</span>
-                    <h3 className="text-lg font-black tracking-tight text-neutral-950">Schloss austauschen Wohnungstür</h3>
+                    <h3 className="text-lg font-black tracking-tight text-neutral-950">{`Schlosswechsel & Einbruchschutz in ${city}`}</h3>
                   </div>
                   <p className="text-[13px] text-neutral-600 leading-relaxed font-normal">
-                    Wann sollten Sie das <strong className="font-bold text-neutral-900">Schloss austauschen an Ihrer Wohnungstür</strong>? Bei Schlüsselverlust, Umzug oder einem hakenden Zylinder ist schnelles Handeln gefragt. Wir tauschen Schlösser fachmännisch aus und verbauen ausschließlich geprüfte Sicherheitsbeschläge namhafter Hersteller (ABUS, DOM, BKS) für Ihren persönlichen Schutz.
+                    Wann sollten Sie das Schloss austauschen an Ihrer Wohnungstür? Bei Schlüsselverlust, Umzug oder einem hakenden Zylinder ist schnelles Handeln gefragt. Wir tauschen Schlösser fachmännisch aus und verbauen ausschließlich geprüfte Sicherheitsbeschläge namhafter Hersteller (ABUS, DOM, BKS) für Ihren persönlichen Schutz.
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-neutral-100 flex items-center justify-between">
@@ -655,10 +720,10 @@ export default function App() {
                 <div>
                   <div className="flex items-center gap-3 mb-4">
                     <span className="w-8 h-8 rounded-full bg-[#2563EB]/10 text-[#2563EB] flex items-center justify-center font-bold text-sm">3</span>
-                    <h3 className="text-lg font-black tracking-tight text-neutral-950">Autoöffnung in der Nähe</h3>
+                    <h3 className="text-lg font-black tracking-tight text-neutral-950">{`Autoöffnung für ${city}`}</h3>
                   </div>
                   <p className="text-[13px] text-neutral-600 leading-relaxed font-normal">
-                    Ihr Autoschlüssel ist versehentlich im verschlossenen Auto oder Kofferraum liegengeblieben? Unser Spezialdienst für eine <strong className="font-bold text-neutral-900">Autoöffnung in der Nähe</strong> operiert blitzschnell im gesamten Ruhrgebiet. Wir öffnen PKWs aller Marken materialschonend über moderne Lishi-Decoder-Werkzeuge ohne Kratzer an Lack oder Fenstern.
+                    Ihr Autoschlüssel ist versehentlich im verschlossenen Auto oder Kofferraum liegengeblieben? Unser Spezialdienst für eine <strong className="font-bold text-neutral-900">{`Autoöffnung für ${city}`}</strong> operiert blitzschnell im gesamten Ruhrgebiet. Wir öffnen PKWs aller Marken materialschonend über moderne Lishi-Decoder-Werkzeuge ohne Kratzer an Lack oder Fenstern.
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-neutral-100 flex items-center justify-between">
@@ -698,10 +763,10 @@ export default function App() {
           <div className="w-[92%] max-w-5xl mx-auto">
             <Reveal delay={0.1} className="max-w-2xl mb-12">
               <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
-                Woran erkennen Sie einen fairen Schlüsseldienst in Essen?
+                {`Woran erkennen Sie einen fairen Schlüsseldienst in ${city}?`}
               </h2>
               <p className="text-neutral-450 text-[13px] md:text-[14px] leading-relaxed font-light mt-3 text-neutral-400">
-                Bei einem Schlüsseldienst machen sich viele Kunden immer wieder Sorgen um versteckte Kosten. Deshalb lohnt sich ein Blick auf die Arbeitsweise eines Anbieters. Ein fairer Notdienst spricht offen über Preise. Schon am Telefon erhalten Sie eine Einschätzung zu den entstehenden Aufwendungen. Manchmal ist sogar ein einfacher Festpreis möglich.
+                {`Bei einem Schlüsseldienst machen sich viele Kunden immer wieder Sorgen um versteckte Kosten. Deshalb lohnt sich ein Blick auf die Arbeitsweise eines Anbieters. Ein fairer Notdienst in ${city} spricht offen über Preise. Schon am Telefon erhalten Sie eine Einschätzung zu den entstehenden Aufwendungen. Manchmal ist sogar ein einfacher Festpreis möglich.`}
               </p>
             </Reveal>
 
@@ -727,9 +792,9 @@ export default function App() {
                   <div className="w-8 h-8 rounded-full bg-[#2563EB]/15 text-[#2563EB] flex items-center justify-center shrink-0">
                     <MapPin className="w-4 h-4 text-[#2563EB]" />
                   </div>
-                  <h4 className="text-sm font-extrabold text-white">Lokaler Anbieter</h4>
+                  <h4 className="text-sm font-extrabold text-white">Schnelle Anfahrtszeit</h4>
                   <p className="text-[12px] text-neutral-400 leading-relaxed font-light mt-auto">
-                    Ein Dienst mit Sitz direkt in Essen oder der direkten Nachbarschaft ist meist überdurchschnittlich schneller bei Ihnen vor Ort. 
+                    {`Durchschnittliche Anfahrtszeit vor Ort in ${city} und allen angrenzenden Stadtteilen.`}
                   </p>
                 </div>
               </Reveal>
@@ -740,9 +805,9 @@ export default function App() {
                   <div className="w-8 h-8 rounded-full bg-[#2563EB]/15 text-[#2563EB] flex items-center justify-center shrink-0">
                     <Settings className="w-4 h-4 text-[#2563EB]" />
                   </div>
-                  <h4 className="text-sm font-extrabold text-white">Schonende Öffnung</h4>
+                  <h4 className="text-sm font-extrabold text-[#2563EB]">Zerstörungsfreie Türöffnung</h4>
                   <p className="text-[12px] text-neutral-400 leading-relaxed font-light mt-auto">
-                    Ein qualifizierter und fleißiger Techniker versucht in 99% der Fälle zuerst eine materialschonende, zerstörungsfreie Türöffnung.
+                    {`Zerstörungsfreie Notöffnungen bei lediglich ins Schloss gefallenen Wohnungstüren durch unsere Profi-Techniker direkt in ${city}.`}
                   </p>
                 </div>
               </Reveal>
@@ -766,9 +831,9 @@ export default function App() {
                   <div className="w-8 h-8 rounded-full bg-[#2563EB]/15 text-[#2563EB] flex items-center justify-center shrink-0">
                     <UserCheck className="w-4 h-4 text-[#2563EB]" />
                   </div>
-                  <h4 className="text-sm font-extrabold text-white">Ruhige, professionelle Arbeitsweise</h4>
+                  <h4 className="text-sm font-extrabold text-white">Rund um die Uhr erreichbar</h4>
                   <p className="text-[12px] text-neutral-400 leading-relaxed font-light mt-auto">
-                    Ein erstklassiger Fachmann am Schloss arbeitet ruhig, strukturiert und besonnen. Sie als Endkunde werden über alle Einzelschritte bestens informiert. Das sorgt für maximale Preissicherheit und baut Ängste ab.
+                    {`Echte Erreichbarkeit rund um die Uhr in ${city}. Kein anonymes Callcenter, sondern immer der direkte Draht zum Techniker vor Ort.`}
                   </p>
                 </div>
               </Reveal>
@@ -813,7 +878,7 @@ export default function App() {
               <Reveal delay={0.2} className="w-full">
                 <div className="relative p-2.5 bg-white border border-neutral-200/60 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.02)] overflow-hidden group">
                   <img 
-                    src="https://türengel.de/images/2026/03/24/pexels-jakubzerdzicki-16695381.jpg" 
+                    src="https://www.assos-schluesselnotdienst.de/wp-content/uploads/2022/02/schluesselnotdienst-tueroeffnung-e1644311333479.jpg" 
                     alt="Ehrliche Preisermittlung und Rechnungserstellung vor Ort durch Mitarbeiter" 
                     width={480}
                     height={360}
@@ -837,7 +902,7 @@ export default function App() {
               <Reveal delay={0.2} className="w-full">
                 <div className="relative p-2.5 bg-white border border-neutral-200/60 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.02)] overflow-hidden group">
                   <img 
-                    src="https://türengel.de/images/2026/03/24/autoschloss-oeffnung.png" 
+                    src="https://aktivschluesseldienst.de/wp-content/uploads/2023/10/aktiv-schluesseldienst_wechsel2-1024x683.jpeg" 
                     alt="Professioneller Schlosswechsel und Einbruchschutz an der Haustür" 
                     width={480}
                     height={360}
@@ -957,9 +1022,8 @@ export default function App() {
               {/* Semi-transparent image overlay to preserve exact background design of previous premium site */}
               <div className="absolute inset-0 z-0 opacity-40">
                 <img 
-                  src="https://türengel.de/images/2026/05/12/schluesseldienst-schnell.png" 
-                  alt="Zweigebietsschlüsseldienst Türengel Kundendienstfahrzeug vor Ort in Essen" 
-                  width={1024}
+                  src="https://xn--trengel-q9a.de/images/2026/05/12/schluesseldienst-schnell.png" 
+                  alt="Zweigebietsschlüsseldienst Türengel Kundendienstfahrzeug vor Ort in Essen"                    width={1024}
                   height={400}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
@@ -1008,17 +1072,17 @@ export default function App() {
               <FAQItem 
                 index={0}
                 question="Wie schnell ist der Schlüsseldienst vor Ort?"
-                answer="In der Regel sind wir innerhalb von 15-30 Minuten bei Ihnen, je nach Ihrem genauen Standort in Essen und der aktuellen Verkehrslage."
+                answer={`Da unsere Techniker strategisch direkt im Raum ${city} verteilt sind, beträgt die Wartezeit selten mehr als 20 Minuten.`}
               />
               <FAQItem 
                 index={1}
                 question="Was kostet eine Türöffnung?"
-                answer="Wir bieten Ihnen faire und nachvollziehbare Zylinderöffnungen zu absolut transparenten Preisen. Eine zerstörungsfreie Öffnung einer einfachen zugefallenen Tür erhalten Sie werktags tagsüber bereits ab 69 € Festpreis inklusive Mehrwertsteuer."
+                answer={`Wir setzen auf absolute Preissicherheit. Den exakten Festpreis besprechen wir vor Arbeitsbeginn mit Ihnen – mit günstigen und transparenten Anfahrtskosten für die Region ${city}.`}
               />
               <FAQItem 
                 index={2}
                 question="Kann jede Tür ohne Schaden geöffnet werden?"
-                answer="Ja, nahezu 99% aller einfach zugefallenen Wohnungstüren lassen sich von unseren geschulten Fachkräften absolut materialschonend, d.h. völlig ohne Beschädigung oder sichtbare Spuren am Rahmen oder Zylinder, öffnen."
+                answer={`Zu 99% nicht. Unsere Techniker nutzen Spezialwerkzeuge für komplett zerstörungsfreie Notöffnungen in ${city}.`}
               />
               <FAQItem 
                 index={3}
@@ -1053,7 +1117,7 @@ export default function App() {
               <Reveal delay={0.2} className="w-full">
                 <div className="relative p-2.5 bg-white border border-neutral-200/60 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.02)] overflow-hidden group">
                   <img 
-                    src="https://türengel.de/images/2026/03/24/tuerengel-schluesseldienst-oeffnen.png" 
+                    src="https://gokey.at/wp-content/uploads/2024/09/Aufsperrdienst-1190-Wien-Locksmith-scaled.jpg" 
                     alt="Die Türengel Schlüsseldienst und Servicezentrale vor Ort in Essen für schnelle Hilfe" 
                     width={480}
                     height={360}
@@ -1092,73 +1156,12 @@ export default function App() {
 
               <Reveal delay={0.2} className="pt-2">
                 <a href="tel:+491776721642">
-                  <CTAButton text="0177 6721642 - DIREKT NOTDIENST RUFEN" variant="accent" />
+                  <CTAButton text={`DIREKT HILFE IN ${city.toUpperCase()} RUFEN`} variant="accent" />
                 </a>
               </Reveal>
             </div>
 
           </div>
-        </section>
-
-        {/* SECTION 13: "VERFÜGBAR IN" GRID LIST OF AREAS */}
-        <section className="w-full py-16 md:py-24 bg-neutral-950 text-white relative overflow-hidden" id="gebiete">
-          <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
-          
-          <div className="w-[92%] max-w-5xl mx-auto">
-            <Reveal delay={0.1} className="text-center max-w-3xl mx-auto mb-14">
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
-                Verfügbar in folgenden Städten und Stadtteilen:
-              </h2>
-              <p className="text-neutral-400 text-xs md:text-sm font-light mt-3">
-                Wir sind direkt im Herzen des Ruhrgebiets stationiert und garantieren eine Anfahrtszeit von meist unter 30 Minuten in folgenden Einsatzgebieten:
-              </p>
-            </Reveal>
-
-            {/* Columns listing the target areas */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-8 md:gap-12 mt-8 text-neutral-300 font-sans text-xs md:text-sm">
-              
-              {/* Col 1 */}
-              <Reveal delay={0.15}>
-                <div className="flex flex-col gap-3 py-1 border-l-2 border-[#2563EB]/60 pl-4">
-                  {targetCitiesColumn1.map((city, idx) => (
-                    <span key={idx} className="hover:text-white transition-all hover:translate-x-1 duration-200 select-none cursor-default font-medium">
-                      • {city}
-                    </span>
-                  ))}
-                </div>
-              </Reveal>
-
-              {/* Col 2 */}
-              <Reveal delay={0.2}>
-                <div className="flex flex-col gap-3 py-1 border-l-2 border-[#2563EB]/60 pl-4">
-                  {targetCitiesColumn2.map((city, idx) => (
-                    <span key={idx} className="hover:text-white transition-all hover:translate-x-1 duration-200 select-none cursor-default font-medium font-sans">
-                      • {city}
-                    </span>
-                  ))}
-                </div>
-              </Reveal>
-
-              {/* Col 3 */}
-              <Reveal delay={0.25}>
-                <div className="flex flex-col gap-3 py-1 border-l-2 border-[#2563EB]/60 pl-4">
-                  {targetCitiesColumn3.map((city, idx) => (
-                    <span key={idx} className="hover:text-white transition-all hover:translate-x-1 duration-200 select-none cursor-default font-medium">
-                      • {city}
-                    </span>
-                  ))}
-                </div>
-              </Reveal>
-
-            </div>
-          </div>
-        </section>
-
-        {/* NEW SECTION 13B: INTERACTIVE MAP & LOCAL SEO CITATION */}
-        <section className="w-[92%] max-w-5xl mx-auto py-16 md:py-24 border-t border-neutral-200/40">
-          <Reveal delay={0.1}>
-            <LocalMapSection />
-          </Reveal>
         </section>
           </>
         )}
@@ -1207,7 +1210,7 @@ export default function App() {
                 <span className="text-[#2563EB]">ausgesperrt?</span>
               </h2>
               <a href="tel:+491776721642" className="block">
-                <CTAButton text="0177 6721642 (DIREKT NOTRUF)" variant="accent" />
+                <CTAButton text={`DIREKT HILFE IN ${city.toUpperCase()} RUFEN`} variant="accent" />
               </a>
             </div>
 
@@ -1222,7 +1225,7 @@ export default function App() {
               <div className="flex flex-col gap-4">
                 <TurengelLogo className="text-neutral-900 self-start animate-pulse" />
                 <p style={{ fontSize: '13px', color: 'rgba(0, 0, 0, 0.55)', maxWidth: '240px', lineHeight: '1.45' }}>
-                  Ihr verlässlicher, fairer Schlüsseldienst und 24h Schlüsselnotdienst für ganz Essen und umliegende Gebiete.
+                  {`TÜRENGEL — Ihr verlässlicher, fairer Schlüsselnotdienst für ${city} und Umgebung.`}
                 </p>
               </div>
 
@@ -1274,7 +1277,7 @@ export default function App() {
               gap: '16px'
             }}>
               <span style={{ fontSize: '11px', fontFamily: 'monospace', color: 'rgba(0, 0, 0, 0.4)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                2026 TÜRENGEL. DE. ALLE RECHTE VORBEHALTEN.
+                {`© 2026 TÜRENGEL. ALLE RECHTE VORBEHALTEN. LOKALER SCHLÜSSELNOTDIENST ${city.toUpperCase()}.`}
               </span>
               <div style={{ display: 'flex', gap: '24px', fontSize: '11px', fontFamily: 'monospace', color: 'rgba(0, 0, 0, 0.4)', letterSpacing: '0.1em' }}>
                 <a href="#privacy" className="hover:text-[#2563EB] transition-colors duration-200">DATENSCHUTZ</a>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Calculator, Check, Phone, Clock, MapPin, Sparkles, ShieldCheck, Info } from 'lucide-react';
 
 interface CalculationResult {

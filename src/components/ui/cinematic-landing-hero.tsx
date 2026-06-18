@@ -174,8 +174,8 @@ const INJECTED_STYLES = `
 
 export interface CinematicHeroProps extends React.HTMLAttributes<HTMLDivElement> {
   brandName?: string;
-  tagline1?: string;
-  tagline2?: string;
+  tagline1?: React.ReactNode;
+  tagline2?: React.ReactNode;
   cardHeading?: string;
   cardDescription?: React.ReactNode;
   metricValue?: number;
@@ -320,14 +320,11 @@ export function CinematicHero({
 
       {/* BACKGROUND LAYER: Hero Texts */}
       <div className="hero-text-wrapper absolute z-10 flex flex-col items-center justify-center text-center w-screen px-4 will-change-transform transform-style-3d">
-        <img src="https://türengel.de/images/slider1.png" alt="Türengel" className="w-full max-w-[300px] mb-6" />
-        <span className="text-track gsap-reveal text-sm md:text-lg font-bold tracking-[0.25em] text-[#2563EB]/90 uppercase mb-4 block">
-          Schlüsseldienst Türengel
-        </span>
+        <img src="https://s1.directupload.eu/images/260618/7omh3ziv.webp" alt="Türengel" className="w-full max-w-[300px] mb-8" referrerPolicy="no-referrer" />
         <h1 className="text-track gsap-reveal text-3d-matte text-4xl md:text-7xl lg:text-[5.5rem] font-extrabold tracking-tight mb-2">
           {tagline1}
         </h1>
-        <span className="text-days gsap-reveal text-silver-matte text-4xl md:text-7xl lg:text-[5.5rem] font-black tracking-widest text-[#2563EB] block">
+        <span className="text-days gsap-reveal text-silver-matte text-2xl md:text-5xl lg:text-[4.2rem] font-black tracking-widest text-[#2563EB] block mt-4">
           {tagline2}
         </span>
       </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { MapPin, Navigation, Clock, Building2, Phone, ArrowUpRight } from 'lucide-react';
 
 export default function LocalMapSection() {
