@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, ReactNode } from 'react';
+import React, { useEffect, useRef, useState, ReactNode } from 'react';
 import Lenis from 'lenis';
 import { motion, useScroll, useTransform, useAnimation } from 'framer-motion';
 import { 
@@ -56,10 +56,17 @@ function Reveal({ children, delay = 0, className = "" }: RevealProps) {
 }
 
 // NavItem: Clean, minimalist transition link like Apple's header
-function NavItem({ text, href = "#" }: { text: string; href?: string }) {
+interface NavItemProps {
+  text: string;
+  href?: string;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+}
+
+function NavItem({ text, href = "#", onClick }: NavItemProps) {
   return (
     <a
       href={href}
+      onClick={onClick}
       className="text-neutral-600 hover:text-[#2563EB] text-[11px] font-bold tracking-widest transition-all duration-300 uppercase relative py-1 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#2563EB] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-left"
     >
       {text}
@@ -144,73 +151,167 @@ function FAQItem({ question, answer, index }: FAQItemProps) {
   );
 }
 
+// Route parsing helpers
+function parseCityName(segment: string): string {
+  if (!segment || segment.toLowerCase() === 'index.html' || segment.toLowerCase() === 'home' || segment.toLowerCase() === 'index') {
+    return 'Essen';
+  }
+  try {
+    const decoded = decodeURIComponent(segment).trim();
+    return decoded
+      .split(/[\s_-]+/)
+      .map(word => {
+        if (!word) return '';
+        if (['an', 'der', 'am', 'im', 'in'].includes(word.toLowerCase())) {
+          return word.toLowerCase();
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(' ');
+  } catch {
+    return 'Essen';
+  }
+}
+
+function getRouteInfo() {
+  if (typeof window === 'undefined') {
+    return { page: 'home' as const, city: 'Essen' };
+  }
+  const path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '').toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+
+  const segments = path ? path.split('/') : [];
+  
+  let page: 'home' | 'impressum' | 'datenschutz' = 'home';
+  let cityNormalized = 'Essen';
+
+  if (segments.length === 0) {
+    if (hash === '#terms') page = 'impressum';
+    else if (hash === '#privacy') page = 'datenschutz';
+    else page = 'home';
+  } else if (segments.length === 1) {
+    const first = segments[0];
+    if (first === 'impressum' || hash === '#terms') {
+      page = 'impressum';
+    } else if (first === 'datenschutz' || hash === '#privacy') {
+      page = 'datenschutz';
+    } else {
+      cityNormalized = parseCityName(first);
+      if (hash === '#terms') page = 'impressum';
+      else if (hash === '#privacy') page = 'datenschutz';
+      else page = 'home';
+    }
+  } else if (segments.length >= 2) {
+    const first = segments[0];
+    const second = segments[1];
+    cityNormalized = parseCityName(first);
+    if (second === 'impressum') {
+      page = 'impressum';
+    } else if (second === 'datenschutz') {
+      page = 'datenschutz';
+    }
+  }
+
+  return { page, city: cityNormalized };
+}
+
 export default function App() {
   const { scrollY } = useScroll();
   const headerY = useTransform(scrollY, [0, 400, 700], [0, 0, -150]);
 
-  const [currentPage, setCurrentPage] = useState<'home' | 'impressum' | 'datenschutz'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'impressum' | 'datenschutz'>(() => {
+    return getRouteInfo().page;
+  });
+  const [city, setCity] = useState<string>(() => {
+    return getRouteInfo().city;
+  });
   const [showStickyCall, setShowStickyCall] = useState(false);
 
-  // Parse path and extract city name
-  const [city, setCity] = useState(() => {
-    if (typeof window === 'undefined') return 'Essen';
-    const path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
-    if (!path || path === 'index.html') return 'Essen';
-    try {
-      const decoded = decodeURIComponent(path).trim();
-      const segment = decoded.split('/')[0].split(/[#\?]/)[0];
-      if (!segment || segment.toLowerCase() === 'index.html' || segment.toLowerCase() === 'home') {
-        return 'Essen';
+  const navigateTo = (page: 'home' | 'impressum' | 'datenschutz', targetCity?: string) => {
+    const currentCity = targetCity || city;
+    let newPath = '';
+    
+    if (page === 'home') {
+      if (currentCity.toLowerCase() === 'essen') {
+        newPath = '/';
+      } else {
+        newPath = `/${currentCity.toLowerCase()}`;
       }
-      return segment
-        .split(/[\s_-]+/)
-        .map(word => {
-          if (!word) return '';
-          if (['an', 'der', 'am', 'im', 'in'].includes(word.toLowerCase())) {
-            return word.toLowerCase();
-          }
-          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        })
-        .join(' ');
-    } catch {
-      return 'Essen';
+    } else {
+      if (currentCity.toLowerCase() === 'essen') {
+        newPath = `/${page}`;
+      } else {
+        newPath = `/${currentCity.toLowerCase()}/${page}`;
+      }
     }
-  });
+    
+    try {
+      window.history.pushState(null, '', newPath);
+    } catch (e) {
+      console.warn('Failed to pushState in sandbox/iframe:', e);
+    }
+    setCurrentPage(page);
+    if (targetCity) {
+      setCity(targetCity);
+    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  };
+
+  const handleNavSectionClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    navigateTo('home');
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 150);
+  };
 
   useEffect(() => {
     const handlePopState = () => {
-      if (typeof window === 'undefined') return;
-      const path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
-      if (!path || path === 'index.html') {
-        setCity('Essen');
-        return;
+      const { page, city: newCity } = getRouteInfo();
+      setCurrentPage(page);
+      setCity(newCity);
+    };
+
+    const handleHash = () => {
+      const hash = window.location.hash;
+      const { page, city: newCity } = getRouteInfo();
+      
+      if (page !== currentPage) {
+        setCurrentPage(page);
       }
-      try {
-        const decoded = decodeURIComponent(path).trim();
-        const segment = decoded.split('/')[0].split(/[#\?]/)[0];
-        if (!segment || segment.toLowerCase() === 'index.html' || segment.toLowerCase() === 'home') {
-          setCity('Essen');
-          return;
+      if (newCity !== city) {
+        setCity(newCity);
+      }
+
+      if (hash.startsWith('#') && hash.length > 1) {
+        if (hash !== '#terms' && hash !== '#privacy' && hash !== '#privacy-policy') {
+          setCurrentPage('home');
+          setTimeout(() => {
+            const id = hash.substring(1);
+            const el = document.getElementById(id);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 150);
         }
-        setCity(
-          segment
-            .split(/[\s_-]+/)
-            .map(word => {
-              if (!word) return '';
-              if (['an', 'der', 'am', 'im', 'in'].includes(word.toLowerCase())) {
-                return word.toLowerCase();
-              }
-              return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-            })
-            .join(' ')
-        );
-      } catch {
-        setCity('Essen');
       }
     };
+
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+    window.addEventListener('hashchange', handleHash);
+
+    if (window.location.hash) {
+      handleHash();
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handleHash);
+    };
+  }, [currentPage, city]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -269,35 +370,6 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    const handleHash = () => {
-      const hash = window.location.hash;
-      if (hash === '#terms') {
-        setCurrentPage('impressum');
-        window.scrollTo({ top: 0, behavior: 'auto' });
-      } else if (hash === '#privacy') {
-        setCurrentPage('datenschutz');
-        window.scrollTo({ top: 0, behavior: 'auto' });
-      } else if (hash.startsWith('#') && hash.length > 1) {
-        setCurrentPage('home');
-        setTimeout(() => {
-          const id = hash.substring(1);
-          const el = document.getElementById(id);
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 150);
-      } else {
-        setCurrentPage('home');
-        window.scrollTo({ top: 0, behavior: 'auto' });
-      }
-    };
-
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
-
   // Brand logos for the slider with their visual dimensions / aspects
   const brandLogos = [
     { name: "DOM Security", url: "https://vectorseek.com/wp-content/uploads/2024/02/Dom-Logo-Vector.svg--300x209.png" },
@@ -330,18 +402,25 @@ export default function App() {
       >
         <div className="flex items-center justify-between bg-white/80 backdrop-blur-md border border-neutral-200/50 rounded-full px-6 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
           {/* Left: Branding */}
-          <a href="#" className="flex items-center hover:opacity-90 transition-all">
+          <a 
+            href="#" 
+            onClick={(e) => {
+              e.preventDefault();
+              navigateTo('home');
+            }}
+            className="flex items-center hover:opacity-90 transition-all"
+          >
             <TurengelLogo className="h-5" />
           </a>
 
           {/* Center/Right: Apple Minimal Nav */}
           <div className="hidden lg:flex items-center gap-10">
             <nav className="flex items-center gap-8">
-              <NavItem text="Preise" href="#preise" />
-              <NavItem text="Dienstleistungen" href="#leistungen" />
-              <NavItem text="Sicherheitnotdienst" href="#vorteile" />
-              <NavItem text="Häufige Fragen" href="#faq" />
-              <NavItem text="Verfügbarkeit" href="#gebiete" />
+              <NavItem text="Preise" href="#preise" onClick={(e) => handleNavSectionClick(e, 'preise')} />
+              <NavItem text="Dienstleistungen" href="#leistungen" onClick={(e) => handleNavSectionClick(e, 'leistungen')} />
+              <NavItem text="Sicherheitnotdienst" href="#vorteile" onClick={(e) => handleNavSectionClick(e, 'vorteile')} />
+              <NavItem text="Häufige Fragen" href="#faq" onClick={(e) => handleNavSectionClick(e, 'faq')} />
+              <NavItem text="Verfügbarkeit" href="#gebiete" onClick={(e) => handleNavSectionClick(e, 'gebiete')} />
             </nav>
             <a 
               href="tel:+491776721642" 
@@ -1167,11 +1246,11 @@ export default function App() {
         )}
 
         {currentPage === 'impressum' && (
-          <Impressum onBackToHome={() => { setCurrentPage('home'); window.location.hash = ''; }} />
+          <Impressum onBackToHome={() => navigateTo('home')} />
         )}
 
         {currentPage === 'datenschutz' && (
-          <Datenschutz onBackToHome={() => { setCurrentPage('home'); window.location.hash = ''; }} />
+          <Datenschutz onBackToHome={() => navigateTo('home')} />
         )}
 
         {/* SECTION 14: FOOTER (ELITE GLASS CARD) */}
@@ -1233,9 +1312,9 @@ export default function App() {
               <div className="flex flex-col gap-4">
                 <h4 style={{ fontSize: '10px', fontFamily: 'monospace', letterSpacing: '0.12em', color: 'rgba(0, 0, 0, 0.45)', fontWeight: 800 }}>TÜRENGEL</h4>
                 <div className="flex flex-col gap-2.5" style={{ fontSize: '13.5px', color: 'rgba(0, 0, 0, 0.7)' }}>
-                  <a href="#preise" className="hover:text-[#2563EB] transition-colors duration-200">Preise &amp; Infos</a>
-                  <a href="#gebiete" className="hover:text-[#2563EB] transition-colors duration-200">Einsatzgebiete</a>
-                  <a href="#vorteile" className="hover:text-[#2563EB] transition-colors duration-200">Gute Gründe</a>
+                  <a href="#preise" onClick={(e) => handleNavSectionClick(e, 'preise')} className="hover:text-[#2563EB] transition-colors duration-200">Preise &amp; Infos</a>
+                  <a href="#gebiete" onClick={(e) => handleNavSectionClick(e, 'gebiete')} className="hover:text-[#2563EB] transition-colors duration-200">Einsatzgebiete</a>
+                  <a href="#vorteile" onClick={(e) => handleNavSectionClick(e, 'vorteile')} className="hover:text-[#2563EB] transition-colors duration-200">Gute Gründe</a>
                   <a href="tel:+491776721642" className="hover:text-[#2563EB] transition-colors duration-200">Notruf Direkt</a>
                 </div>
               </div>
@@ -1244,10 +1323,10 @@ export default function App() {
               <div className="flex flex-col gap-4">
                 <h4 style={{ fontSize: '10px', fontFamily: 'monospace', letterSpacing: '0.12em', color: 'rgba(0, 0, 0, 0.45)', fontWeight: 800 }}>LEISTUNGEN</h4>
                 <div className="flex flex-col gap-2.5" style={{ fontSize: '13.5px', color: 'rgba(0, 0, 0, 0.7)' }}>
-                  <a href="#leistungen" className="hover:text-[#2563EB] transition-colors duration-200 font-sans">Türöffnungen</a>
-                  <a href="#leistungen" className="hover:text-[#2563EB] transition-colors duration-200 font-sans">Autoöffnungen</a>
-                  <a href="#leistungen" className="hover:text-[#2563EB] transition-colors duration-200 font-sans">Zylinderwechsel</a>
-                  <a href="#leistungen" className="hover:text-[#2563EB] transition-colors duration-200 font-sans">Tresoröffnungen</a>
+                  <a href="#leistungen" onClick={(e) => handleNavSectionClick(e, 'leistungen')} className="hover:text-[#2563EB] transition-colors duration-200 font-sans">Türöffnungen</a>
+                  <a href="#leistungen" onClick={(e) => handleNavSectionClick(e, 'leistungen')} className="hover:text-[#2563EB] transition-colors duration-200 font-sans">Autoöffnungen</a>
+                  <a href="#leistungen" onClick={(e) => handleNavSectionClick(e, 'leistungen')} className="hover:text-[#2563EB] transition-colors duration-200 font-sans">Zylinderwechsel</a>
+                  <a href="#leistungen" onClick={(e) => handleNavSectionClick(e, 'leistungen')} className="hover:text-[#2563EB] transition-colors duration-200 font-sans">Tresoröffnungen</a>
                 </div>
               </div>
 
@@ -1280,9 +1359,21 @@ export default function App() {
                 {`© 2026 TÜRENGEL. ALLE RECHTE VORBEHALTEN. LOKALER SCHLÜSSELNOTDIENST ${city.toUpperCase()}.`}
               </span>
               <div style={{ display: 'flex', gap: '24px', fontSize: '11px', fontFamily: 'monospace', color: 'rgba(0, 0, 0, 0.4)', letterSpacing: '0.1em' }}>
-                <a href="#privacy" className="hover:text-[#2563EB] transition-colors duration-200">DATENSCHUTZ</a>
+                <a 
+                  href="#privacy" 
+                  onClick={(e) => { e.preventDefault(); navigateTo('datenschutz'); }}
+                  className="hover:text-[#2563EB] transition-colors duration-200"
+                >
+                  DATENSCHUTZ
+                </a>
                 <span>|</span>
-                <a href="#terms" className="hover:text-[#2563EB] transition-colors duration-200">IMPRESSUM</a>
+                <a 
+                  href="#terms" 
+                  onClick={(e) => { e.preventDefault(); navigateTo('impressum'); }}
+                  className="hover:text-[#2563EB] transition-colors duration-200"
+                >
+                  IMPRESSUM
+                </a>
               </div>
             </div>
 
