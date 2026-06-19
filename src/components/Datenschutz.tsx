@@ -67,9 +67,9 @@ export default function Datenschutz({ onBackToHome }: DatenschutzProps) {
               <p>
                 <strong>Verantwortliche Stelle für die Datenverarbeitung auf dieser Webseite:</strong><br />
                 Türengel Schlüsselnotdienst &amp; Schlosswechsel<br />
-                Daniel Ripp<br />
-                Bocholder Str. 226, 45356 Essen<br />
-                E-Mail: ripptoprivat@gmail.com<br />
+                Hakan Simsek<br />
+                Bocholderstr. 207, 45356 Essen<br />
+                E-Mail: Kontakt@türengel.de<br />
                 Telefon: 0177 6721642
               </p>
               <p>

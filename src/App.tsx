@@ -1102,7 +1102,7 @@ export default function App() {
               <div className="absolute inset-0 z-0 opacity-40">
                 <img 
                   src="https://xn--trengel-q9a.de/images/2026/05/12/schluesseldienst-schnell.png" 
-                  alt="Zweigebietsschlüsseldienst Türengel Kundendienstfahrzeug vor Ort in Essen"                    width={1024}
+                  alt="Zweigebietsschlüsseldienst Türengel Kundendienstfahrzeug vor Ort in Essen"                   width={1024}
                   height={400}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
@@ -1334,7 +1334,7 @@ export default function App() {
               <div className="flex flex-col gap-4">
                 <h4 style={{ fontSize: '10px', fontFamily: 'monospace', letterSpacing: '0.12em', color: 'rgba(0, 0, 0, 0.45)', fontWeight: 800 }}>KONTAKT</h4>
                 <div className="flex flex-col gap-2 font-mono text-[11px] leading-relaxed" style={{ color: 'rgba(0, 0, 0, 0.7)' }}>
-                  <span className="font-sans font-medium text-neutral-800">Bocholder Str. 226</span>
+                  <span className="font-sans font-medium text-neutral-800">Bocholderstr. 207</span>
                   <span className="font-sans font-medium text-neutral-800">45356 Essen</span>
                   <a href="tel:+491776721642" className="text-neutral-900 font-extrabold hover:underline hover:text-[#2563EB] transition-all duration-200">
                     Mobil: 0177 6721642

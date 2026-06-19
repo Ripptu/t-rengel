@@ -48,7 +48,7 @@ export default function LocalMapSection() {
               <h3 className="font-sans font-bold text-lg text-neutral-950">Einsatzbasis Essen & Ruhrgebiet</h3>
             </div>
             <a 
-              href="https://www.google.com/maps/dir/?api=1&destination=Bocholder+Str.+226,+45356+Essen"
+              href="https://www.google.com/maps/dir/?api=1&destination=Bocholderstr.+207,+45356+Essen"
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:underline"
@@ -58,11 +58,11 @@ export default function LocalMapSection() {
             </a>
           </div>
 
-          {/* Fully styled Map Frame (OpenStreetMap focused at Bocholder Str. 226 Essen) */}
+          {/* Fully styled Map Frame (OpenStreetMap focused at Bocholderstr. 207 Essen) */}
           <div className="relative w-full h-[280px] md:h-[360px] rounded-2xl overflow-hidden border border-neutral-200/80 bg-stone-100 shadow-inner group">
             <iframe 
               title="Türengel Schlüsseldienst Essen Standortsicht"
-              src="https://maps.google.com/maps?q=Bocholder%2520Str.%2520226%252C%252045356%2520Essen&t=&z=14&ie=UTF8&iwloc=&output=embed"
+              src="https://maps.google.com/maps?q=Bocholderstr.%20207%2C%2045356%20Essen&t=&z=14&ie=UTF8&iwloc=&output=embed"
               width="100%" 
               height="100%" 
               style={{ border: 0, filter: 'grayscale(0.12) contrast(1.05)' }}

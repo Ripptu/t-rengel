@@ -51,8 +51,8 @@ export default function Impressum({ onBackToHome }: ImpressumProps) {
             <div className="flex flex-col gap-2.5 text-[14px] leading-relaxed text-neutral-700">
               <span className="font-bold text-neutral-900 block text-[15px]">Türengel Schlüsselnotdienst</span>
               <p className="font-light">
-                Inhaber: Daniel Ripp<br />
-                Bocholder Str. 226<br />
+                Inhaber: Hakan Simsek<br />
+                Bocholderstr. 207<br />
                 45356 Essen
               </p>
             </div>
@@ -76,9 +76,9 @@ export default function Impressum({ onBackToHome }: ImpressumProps) {
                 <span className="font-mono text-[11px] text-stone-400">Büro Festnetz:</span>
                 0201 476 43 14
               </a>
-              <a href="mailto:ripptoprivat@gmail.com" className="flex items-center gap-2.5 hover:text-[#2563EB] transition-colors font-medium">
+              <a href="mailto:Kontakt@türengel.de" className="flex items-center gap-2.5 hover:text-[#2563EB] transition-colors font-medium">
                 <span className="font-mono text-[11px] text-stone-400">E-Mail:</span>
-                ripptoprivat@gmail.com
+                Kontakt@türengel.de
               </a>
             </div>
           </div>
@@ -92,7 +92,7 @@ export default function Impressum({ onBackToHome }: ImpressumProps) {
             <h4 className="font-extrabold text-sm text-neutral-900 uppercase tracking-wider mb-3">Umsatzsteuer-ID</h4>
             <p>
               Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:<br />
-              <strong className="font-mono text-xs text-neutral-800 font-semibold uppercase bg-neutral-100 px-1.5 py-0.5 rounded">DE314582916</strong>
+              <strong className="font-mono text-xs text-neutral-800 font-semibold uppercase bg-neutral-100 px-1.5 py-0.5 rounded">Wird nachgereicht / folgt noch</strong>
             </p>
           </div>
 
