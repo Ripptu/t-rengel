@@ -29,7 +29,7 @@ import PriceCalculator from './components/PriceCalculator';
 function TurengelLogo({ className = "h-5 text-neutral-900" }: { className?: string }) {
   return (
     <div className={`flex items-center select-none ${className}`}>
-      <img src="https://s1.directupload.eu/images/260616/7dsqnojn.webp" alt="Türengel Logo" className="h-[40px] md:h-[50px] w-auto object-contain" />
+      <img src="https://s1.directupload.eu/images/260620/v3lo3c5m.png" alt="Türengel Logo" className="h-[40px] md:h-[50px] w-auto object-contain" referrerPolicy="no-referrer" />
     </div>
   );
 }
