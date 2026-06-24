@@ -24,6 +24,7 @@ import { CinematicHero } from '@/components/ui/cinematic-landing-hero';
 import Impressum from './components/Impressum';
 import Datenschutz from './components/Datenschutz';
 import PriceCalculator from './components/PriceCalculator';
+import LocalMapSection from './components/LocalMapSection';
 
 // TÜRENGEL Logo: An elegant high-contrast locksmith wing and typographic symbol
 function TurengelLogo({ className = "h-5 text-neutral-900" }: { className?: string }) {
@@ -835,6 +836,22 @@ export default function App() {
             </Reveal>
 
           </div>
+        </section>
+
+        {/* SECTION: EINSATZGEBIETE & VERFÜGBARKEITEN */}
+        <section className="w-[92%] max-w-6xl mx-auto py-16 md:py-24 border-t border-neutral-200/40" id="gebiete">
+          <Reveal delay={0.1} className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-[clamp(1.6rem,4vw,2.5rem)] leading-tight font-extrabold tracking-tight text-neutral-950 mb-3">
+              Unsere Einsatzgebiete &amp; Verfügbarkeiten in Essen und dem Ruhrgebiet
+            </h2>
+            <p className="text-[13px] md:text-[14px] text-neutral-500 font-light leading-relaxed">
+              Als Ihr zuverlässiger lokaler Schlüsseldienst und Schlüsselnotdienst für Essen sind wir rund um die Uhr mit mehreren mobilen Monteuren im Einsatz. Dank strategisch verteilter Stützpunkte garantieren wir Ihnen extrem kurze Wartezeiten von 15 bis 30 Minuten in sämtlichen Essener Stadtteilen sowie im umliegenden Ruhrgebiet.
+            </p>
+          </Reveal>
+
+          <Reveal delay={0.15}>
+            <LocalMapSection />
+          </Reveal>
         </section>
 
         {/* SECTION 6: "WORAN ERKENNEN SIE EINEN FAIREN SCHLÜSSELDIENST" */}
