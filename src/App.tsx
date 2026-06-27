@@ -852,6 +852,13 @@ export default function App() {
           <Reveal delay={0.15}>
             <LocalMapSection />
           </Reveal>
+          
+          <div className="mt-8 text-center px-4">
+            <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-4">Weitere Einsatzgebiete</h3>
+            <p className="text-[12px] text-neutral-400 font-light leading-relaxed max-w-4xl mx-auto">
+              Unser Schlüsseldienst ist Ihr zuverlässiger Partner in: Essen, Bottrop, Gelsenkirchen, Duisburg, Mülheim an der Ruhr, Oberhausen, Bochum, Moers, Marl, Gladbeck, Kamp-Lintfort, Witten, Herne, Herten, Dorsten, Dortmund, Datteln, Hagen, Dinslaken, Recklinghausen, Ratingen, Krefeld, Kempen, Düsseldorf, Neuss, Erkrath, Wuppertal, Heiligenhaus, Unna, Bergkamen, Oer-Erkenschwick, Haltern am See, Wetter Ruhr, Sprockhövel, Gevelsberg, Ennepetal, Wülfrath, Rheinberg, Velbert und Castrop-Rauxel.
+            </p>
+          </div>
         </section>
 
         {/* SECTION 6: "WORAN ERKENNEN SIE EINEN FAIREN SCHLÜSSELDIENST" */}
