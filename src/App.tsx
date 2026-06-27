@@ -853,11 +853,34 @@ export default function App() {
             <LocalMapSection />
           </Reveal>
           
-          <div className="mt-8 text-center px-4">
-            <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-4">Weitere Einsatzgebiete</h3>
-            <p className="text-[12px] text-neutral-400 font-light leading-relaxed max-w-4xl mx-auto">
-              Unser Schlüsseldienst ist Ihr zuverlässiger Partner in: Essen, Bottrop, Gelsenkirchen, Duisburg, Mülheim an der Ruhr, Oberhausen, Bochum, Moers, Marl, Gladbeck, Kamp-Lintfort, Witten, Herne, Herten, Dorsten, Dortmund, Datteln, Hagen, Dinslaken, Recklinghausen, Ratingen, Krefeld, Kempen, Düsseldorf, Neuss, Erkrath, Wuppertal, Heiligenhaus, Unna, Bergkamen, Oer-Erkenschwick, Haltern am See, Wetter Ruhr, Sprockhövel, Gevelsberg, Ennepetal, Wülfrath, Rheinberg, Velbert und Castrop-Rauxel.
-            </p>
+          <div className="mt-8 px-4 max-w-6xl mx-auto">
+            <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-8 text-center">Weitere Einsatzgebiete</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+              <div className="bg-white p-5 rounded-2xl border border-neutral-100 shadow-sm">
+                <h4 className="text-sm font-bold text-neutral-900 mb-2">Ruhrgebiet West</h4>
+                <p className="text-[11px] text-neutral-600 leading-relaxed">
+                  Schnelle Hilfe vom Schlüsseldienst in Essen, Bottrop, Gelsenkirchen, Duisburg, Mülheim an der Ruhr und Oberhausen.
+                </p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-neutral-100 shadow-sm">
+                <h4 className="text-sm font-bold text-neutral-900 mb-2">Nördliches Ruhrgebiet</h4>
+                <p className="text-[11px] text-neutral-600 leading-relaxed">
+                  Fachgerechte Notöffnung in Bochum, Marl, Gladbeck, Herne, Herten, Dorsten, Datteln, Recklinghausen und Castrop-Rauxel.
+                </p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-neutral-100 shadow-sm">
+                <h4 className="text-sm font-bold text-neutral-900 mb-2">Region Süd-West</h4>
+                <p className="text-[11px] text-neutral-600 leading-relaxed">
+                  Ihr Partner für Zylinderwechsel in Düsseldorf, Krefeld, Ratingen, Neuss, Erkrath, Heiligenhaus, Velbert und Wülfrath.
+                </p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-neutral-100 shadow-sm">
+                <h4 className="text-sm font-bold text-neutral-900 mb-2">Weitere Regionen</h4>
+                <p className="text-[11px] text-neutral-600 leading-relaxed">
+                  Zuverlässige Türöffnungen auch in Dortmund, Hagen, Witten, Kamp-Lintfort, Dinslaken, Kempen, Wuppertal, Unna, Bergkamen, Oer-Erkenschwick, Haltern am See, Wetter Ruhr, Sprockhövel, Gevelsberg, Ennepetal, Rheinberg und Moers.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
