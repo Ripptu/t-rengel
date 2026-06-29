@@ -25,6 +25,7 @@ import Impressum from './components/Impressum';
 import Datenschutz from './components/Datenschutz';
 import PriceCalculator from './components/PriceCalculator';
 import LocalMapSection from './components/LocalMapSection';
+import { CITY_SEO_MAP, getSlugForCity } from './data/cityContent';
 
 // TÜRENGEL Logo: An elegant high-contrast locksmith wing and typographic symbol
 function TurengelLogo({ className = "h-5 text-neutral-900" }: { className?: string }) {
@@ -154,19 +155,50 @@ function FAQItem({ question, answer, index }: FAQItemProps) {
 
 // Route parsing helpers
 function parseCityName(segment: string): string {
-  if (!segment || segment.toLowerCase() === 'index.html' || segment.toLowerCase() === 'home' || segment.toLowerCase() === 'index') {
+  if (!segment) return 'Essen';
+  let cleanSegment = decodeURIComponent(segment).trim().toLowerCase();
+  
+  // Strip common SEO prefixes so we isolate the city name
+  cleanSegment = cleanSegment
+    .replace(/^schluesseldienst-/, '')
+    .replace(/^schluesselnotdienst-/, '')
+    .replace(/^schlüsseldienst-/, '')
+    .replace(/^schlüsselnotdienst-/, '')
+    .replace(/^schlosswechsel-/, '')
+    .replace(/^tueröffnung-/, '')
+    .replace(/^tueroeffnung-/, '');
+    
+  if (!cleanSegment || cleanSegment === 'index.html' || cleanSegment === 'home' || cleanSegment === 'index') {
     return 'Essen';
   }
+  
+  // Normalize common German characters/umlauts for dictionary lookup
+  const searchKey = cleanSegment
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss');
+    
+  // Check exact key match in our SEO Map
+  if (CITY_SEO_MAP[searchKey]) {
+    return CITY_SEO_MAP[searchKey].name;
+  }
+  
+  // Fuzzy lookup in case of partial matches or prepositions
+  const foundKey = Object.keys(CITY_SEO_MAP).find(k => k === searchKey || k.startsWith(searchKey) || searchKey.startsWith(k));
+  if (foundKey) {
+    return CITY_SEO_MAP[foundKey].name;
+  }
+  
   try {
-    const decoded = decodeURIComponent(segment).trim();
-    return decoded
+    return cleanSegment
       .split(/[\s_-]+/)
       .map(word => {
         if (!word) return '';
-        if (['an', 'der', 'am', 'im', 'in'].includes(word.toLowerCase())) {
-          return word.toLowerCase();
+        if (['an', 'der', 'am', 'im', 'in'].includes(word)) {
+          return word;
         }
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        return word.charAt(0).toUpperCase() + word.slice(1);
       })
       .join(' ');
   } catch {
@@ -228,21 +260,54 @@ export default function App() {
   });
   const [showStickyCall, setShowStickyCall] = useState(false);
 
+  // Dynamic SEO metadata effect
+  useEffect(() => {
+    const activeSlug = getSlugForCity(city);
+    const seoData = CITY_SEO_MAP[activeSlug] || CITY_SEO_MAP['essen'];
+    
+    if (currentPage === 'home') {
+      document.title = `Schlüsseldienst ${seoData.name} | 24h Schlüsselnotdienst ab 69€`;
+    } else if (currentPage === 'impressum') {
+      document.title = `Impressum | Schlüsseldienst ${seoData.name}`;
+    } else if (currentPage === 'datenschutz') {
+      document.title = `Datenschutz | Schlüsseldienst ${seoData.name}`;
+    }
+    
+    // Set meta description
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute(
+        'content',
+        `Zerstörungsfreie Türöffnung in ${seoData.name} ab 69€ Festpreis. Transparent, kompetent & in 15-30 Min vor Ort. Ihr lokaler 24h Schlüsselnotdienst!`
+      );
+    }
+    
+    // Set meta keywords
+    const metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (metaKeywords) {
+      metaKeywords.setAttribute(
+        'content',
+        `Schlüsseldienst ${seoData.name}, Schlüsselnotdienst ${seoData.name}, Türöffnung ${seoData.name}, Schlosswechsel ${seoData.name}, günstige Türöffnung ${seoData.name}, Autoöffnung ${seoData.name}, Zylinderwechsel, Festpreis, ${seoData.districts.join(', ')}`
+      );
+    }
+  }, [city, currentPage]);
+
   const navigateTo = (page: 'home' | 'impressum' | 'datenschutz', targetCity?: string) => {
     const currentCity = targetCity || city;
+    const slug = getSlugForCity(currentCity);
     let newPath = '';
     
     if (page === 'home') {
-      if (currentCity.toLowerCase() === 'essen') {
+      if (slug === 'essen') {
         newPath = '/';
       } else {
-        newPath = `/${currentCity.toLowerCase()}`;
+        newPath = `/schluesseldienst-${slug}`;
       }
     } else {
-      if (currentCity.toLowerCase() === 'essen') {
+      if (slug === 'essen') {
         newPath = `/${page}`;
       } else {
-        newPath = `/${currentCity.toLowerCase()}/${page}`;
+        newPath = `/schluesseldienst-${slug}/${page}`;
       }
     }
     
@@ -497,11 +562,76 @@ export default function App() {
           </div>
         </section>
 
+        {/* NEW SECTION 2.5: COGNITIVE LOCAL FOCUS FOR PREMIUM SEO SEARCH ENGINES */}
+        {(() => {
+          const activeSlug = getSlugForCity(city);
+          const seoData = CITY_SEO_MAP[activeSlug];
+          if (!seoData) return null;
+          return (
+            <section className="w-[92%] max-w-5xl mx-auto pt-16 md:pt-24 border-b border-neutral-200/40 pb-16" id="stadt-fokus">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-stretch">
+                <div className="lg:col-span-7 flex flex-col gap-6">
+                  <Reveal delay={0.1}>
+                    <span className="font-mono text-[10px] text-[#2563EB] font-bold tracking-widest uppercase block mb-2">
+                      Lokaler Partner vor Ort
+                    </span>
+                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-neutral-950 leading-tight">
+                      Ihr zertifizierter Schlüsseldienst &amp; Aufsperrdienst in {seoData.name}
+                    </h2>
+                  </Reveal>
+                  <Reveal delay={0.15}>
+                    <p className="text-[14px] md:text-[15px] text-neutral-600 leading-relaxed font-normal">
+                      {seoData.seoText}
+                    </p>
+                    <p className="text-[14px] text-neutral-500 leading-relaxed font-light mt-4">
+                      Durch unsere strategisch vorteilhafte Positionierung und die direkte Anbindung an wichtige Autobahnen im Ruhrgebiet wie {seoData.highways.join(' und ')} garantieren wir Ihnen schnellste Eintreffzeiten von in der Regel 15 bis maximal 30 Minuten ab Ihrem Anruf. Zerstörungsfreie Türöffnungen stehen für uns an oberster Stelle.
+                    </p>
+                  </Reveal>
+                  <div className="flex flex-wrap gap-3 mt-2">
+                    {seoData.highways.map(hw => (
+                      <span key={hw} className="px-3 py-1 bg-neutral-100 hover:bg-neutral-200 transition-colors rounded-xl text-[11px] font-bold font-mono text-neutral-700 border border-neutral-200/50">
+                        Autobahn {hw}
+                      </span>
+                    ))}
+                    <span className="px-3 py-1 bg-emerald-50 rounded-xl text-[11px] font-bold font-mono text-emerald-700 border border-emerald-200/50">
+                      Plz: {seoData.zipCodes}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="lg:col-span-5 bg-neutral-50 border border-neutral-200/70 rounded-[2rem] p-6 md:p-8 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-bold text-neutral-900 text-sm font-mono uppercase tracking-wider mb-5">
+                      Stadtbezirke in {seoData.name}
+                    </h3>
+                    <div className="flex flex-wrap gap-2 max-h-[220px] overflow-y-auto pr-2 scrollbar-thin">
+                      {seoData.districts.map(dist => (
+                        <span key={dist} className="px-3 py-1.5 bg-white border border-neutral-200/80 rounded-xl text-xs font-semibold text-neutral-800 shadow-sm hover:border-[#2563EB]/40 transition-all">
+                          {dist}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="border-t border-neutral-200/80 pt-5 mt-6">
+                    <h4 className="font-bold text-xs text-neutral-500 font-mono uppercase tracking-wider mb-2.5">
+                      Lokale Referenzpunkte
+                    </h4>
+                    <p className="text-xs text-neutral-600 leading-relaxed">
+                      Einsatzgebiete rund um bekannte Landmarken wie <strong className="font-semibold text-neutral-900">{seoData.landmarks.join(', ')}</strong> sowie alle angrenzenden Stadtteile und das gesamte Umland.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          );
+        })()}
+
         {/* NEW SECTION 3: "UNSERE PREISE" TABLE / SECTION */}
         <section className="w-[92%] max-w-5xl mx-auto py-16 md:py-24" id="preise">
           <Reveal delay={0.1} className="text-center max-w-3xl mx-auto mb-14">
             <h2 className="text-[clamp(1.6rem,4vw,2.5rem)] leading-tight font-extrabold tracking-tight text-neutral-950 mb-4">
-              Günstige Schlüsseldienst Preise &amp; Türöffnung Festpreis Essen im Jahr 2026
+              Günstige Schlüsseldienst Preise &amp; Türöffnung Festpreis {city} im Jahr 2026
             </h2>
             <p className="text-[13px] md:text-[14px] text-neutral-500 font-light leading-relaxed mb-6">
               Als ehrlicher Schlüsselnotdienst legen wir Wert auf vollkommene Preistransparenz. Um böse Überraschungen oder die gefürchtete Abzocke im Schlüsseldienst-Gewerbe zu vermeiden, stimmen wir alle anfallenden Kosten und Fahrtkosten vor Beginn der Arbeiten verbindlich ab.
@@ -588,16 +718,16 @@ export default function App() {
             <div className="lg:col-span-7 flex flex-col gap-6 order-2 lg:order-1">
               <Reveal delay={0.1}>
                 <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-950 font-sans">
-                  Was können Sie tun, wenn Ihnen in Essen die Tür zugefallen ist? Erste Hilfe vom Schlüsselnotdienst
+                  Was können Sie tun, wenn Ihnen in {city} die Tür zugefallen ist? Erste Hilfe vom Schlüsselnotdienst
                 </h3>
               </Reveal>
 
               <Reveal delay={0.15}>
                 <p className="text-[14px] text-neutral-600 leading-relaxed font-normal">
-                  Wenn in Essen die Tür zugefallen ist und der Schlüssel von innen steckt oder in der Wohnung liegt, ist der erste Impuls oft Stress oder gar Panik. Versuchen Sie unbedingt ruhig zu bleiben und voreilige Selbstversuche zu vermeiden, da diese die Türzarge oder das Schloss nachhaltig beschädigen können. In fast 99% aller Fälle kann eine fachgerechte Türöffnung vollkommen zerstörungsfrei und extrem schnell erledigt werden. Ein erfahrener Schlüsselnotdienst Essen weiß genau, welche materialschonenden Spezialwerkzeuge eingesetzt werden können, um Sie schadensfrei wieder in Ihre Wohnung zu lassen.
+                  Wenn in {city} die Tür zugefallen ist und der Schlüssel von innen steckt oder in der Wohnung liegt, ist der erste Impuls oft Stress oder gar Panik. Versuchen Sie unbedingt ruhig zu bleiben und voreilige Selbstversuche zu vermeiden, da diese die Türzarge oder das Schloss nachhaltig beschädigen können. In fast 99% aller Fälle kann eine fachgerechte Türöffnung vollkommen zerstörungsfrei und extrem schnell erledigt werden. Ein erfahrener Schlüsselnotdienst {city} weiß genau, welche materialschonenden Spezialwerkzeuge eingesetzt werden können, um Sie schadensfrei wieder in Ihre Wohnung zu lassen.
                 </p>
                 <p className="text-[14px] text-neutral-600 leading-relaxed font-normal mt-3">
-                  Wichtig ist für Sie als Betroffene, dass Sie direkt einen seriösen und ortsansässigen Experten kontaktieren und nach einem garantierten Schlüsseldienst Essen Festpreis fragen. Ein qualifizierter, vertrauenswürdiger Aufsperrdienst erklärt Ihnen den geplanten Ablauf bereits am Telefon transparent Schritt für Schritt. Dadurch behalten Sie in dieser Ausnahmesituation stets die volle Budgetkontrolle über alle anfallenden Kosten und können darauf vertrauen, dass keine dubiosen Zusatzgebühren verlangt werden.
+                  Wichtig ist für Sie als Betroffene, dass Sie direkt einen seriösen und ortsansässigen Experten kontaktieren und nach einem garantierten Schlüsseldienst {city} Festpreis fragen. Ein qualifizierter, vertrauenswürdiger Aufsperrdienst erklärt Ihnen den geplanten Ablauf bereits am Telefon transparent Schritt für Schritt. Dadurch behalten Sie in dieser Ausnahmesituation stets die volle Budgetkontrolle über alle anfallenden Kosten und können darauf vertrauen, dass keine dubiosen Zusatzgebühren verlangt werden.
                 </p>
               </Reveal>
 
@@ -661,10 +791,10 @@ export default function App() {
         <section className="w-[92%] max-w-5xl mx-auto py-16 md:py-24 border-t border-neutral-200/40" id="leistungen">
           <Reveal delay={0.1} className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-[clamp(1.6rem,4vw,2.5rem)] leading-tight font-extrabold tracking-tight text-neutral-950 mb-3">
-              Professioneller Schlüsseldienst Essen: Unsere weiteren Aufsperrdienste &amp; Leistungen im Ruhrgebiet
+              Professioneller Schlüsseldienst {city}: Unsere weiteren Aufsperrdienste &amp; Leistungen im Ruhrgebiet
             </h2>
             <p className="text-[13px] md:text-[14px] text-neutral-500 font-light leading-relaxed">
-              Als Ihr moderner und vielseitiger Schlüsseldienst Essen helfen wir Ihnen kompetent bei jedem erdenklichen Problem im Bereich der Schließtechnik, Zylinderreparatur und des Objektschutzes. Unsere mobilen Einsatzkräfte sind rund um die Uhr bestens geschult und ausgerüstet, um weitaus mehr als nur klassische, zerstörungsfreie Türöffnungen durchzuführen. Im Folgenden finden Sie einen Einblick in unsere typischen Fachleistungen für Privat- und Gewerbekunden in der gesamten Region:
+              Als Ihr moderner und vielseitiger Schlüsseldienst {city} helfen wir Ihnen kompetent bei jedem erdenklichen Problem im Bereich der Schließtechnik, Zylinderreparatur und des Objektschutzes. Unsere mobilen Einsatzkräfte sind rund um die Uhr bestens geschult und ausgerüstet, um weitaus mehr als nur klassische, zerstörungsfreie Türöffnungen durchzuführen. Im Folgenden finden Sie einen Einblick in unsere typischen Fachleistungen für Privat- und Gewerbekunden in der gesamten Region:
             </p>
           </Reveal>
 
@@ -787,7 +917,7 @@ export default function App() {
                     <h3 className="text-lg font-black tracking-tight text-neutral-950">{`Schlosswechsel & Einbruchschutz in ${city}`}</h3>
                   </div>
                   <p className="text-[13px] text-neutral-600 leading-relaxed font-normal">
-                    Wann sollten Sie das Türschloss oder den Schließzylinder austauschen lassen an Ihrer Wohnungstür? Bei akutem Schlüsselverlust, dem Einzug in eine neue Immobilie oder einem bereits hakenden Zylinder ist schnelles Handeln zum Schutz Ihrer Privatsphäre unverzichtbar. Unser ausgebildeter Schlüsseldienst Essen führt den Schlosswechsel absolut fachmännisch durch und verbaut ausschließlich geprüfte Sicherheitszylinder und Schutzbeschläge führender deutscher Markenhersteller (Sicherheitsklasse ABUS, DOM, BKS).
+                    Wann sollten Sie das Türschloss oder den Schließzylinder austauschen lassen an Ihrer Wohnungstür? Bei akutem Schlüsselverlust, dem Einzug in eine neue Immobilie oder einem bereits hakenden Zylinder ist schnelles Handeln zum Schutz Ihrer Privatsphäre unverzichtbar. Unser ausgebildeter Schlüsseldienst {city} führt den Schlosswechsel absolut fachmännisch durch und verbaut ausschließlich geprüfte Sicherheitszylinder und Schutzbeschläge führender deutscher Markenhersteller (Sicherheitsklasse ABUS, DOM, BKS).
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-neutral-100 flex items-center justify-between">
@@ -806,7 +936,7 @@ export default function App() {
                     <h3 className="text-lg font-black tracking-tight text-neutral-950">{`Autoöffnung für ${city}`}</h3>
                   </div>
                   <p className="text-[13px] text-neutral-600 leading-relaxed font-normal">
-                    Ihr Autoschlüssel liegt versehentlich im verschlossenen Fahrzeug-Innenraum oder direkt im Kofferraum? Unser hochspezialisierter Sofortservice für eine zerstörungsfreie <strong className="font-bold text-neutral-900">{`Autoöffnung in ${city}`}</strong> operiert rasant im gesamten Stadtgebiet. We open PKWs, LKWs and rasant im gesamten Stadtgebiet. Wir öffnen PKWs, LKWs und Nutzfahrzeuge aller gängigen Marken vollkommen lackschonend über moderne Turbo-Decoder und Lishi-Werkzeuge ohne Kratzer an Karosserie, Lack oder Scheibendichtungen.
+                    Ihr Autoschlüssel liegt versehentlich im verschlossenen Fahrzeug-Innenraum oder direkt im Kofferraum? Unser hochspezialisierter Sofortservice für eine zerstörungsfreie <strong className="font-bold text-neutral-900">{`Autoöffnung in ${city}`}</strong> operiert rasant im gesamten Stadtgebiet. Wir öffnen PKWs, LKWs und Nutzfahrzeuge aller gängigen Marken vollkommen lackschonend über moderne Turbo-Decoder und Lishi-Werkzeuge ohne Kratzer an Karosserie, Lack oder Scheibendichtungen.
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-neutral-100 flex items-center justify-between">
@@ -825,7 +955,7 @@ export default function App() {
                     <h3 className="text-lg font-black tracking-tight text-neutral-950">Einbruchschutz Beratung</h3>
                   </div>
                   <p className="text-[13px] text-neutral-600 leading-relaxed font-normal">
-                    Wirksame Einbruchsprävention verhindert unbefugte Zutritte, bevor überhaupt ein Schaden an Ihrer Immobilie entsteht. Im Rahmen unserer fundierten und herstellerneutralen <strong className="font-bold text-neutral-900">Einbruchschutz Beratung in Essen</strong> analysieren wir Schwachstellen an Fenstern, Terrassentüren und Haupteingängen. Anschließend installieren wir robuste Querriegel, einbruchhemmende Panzerriegel, Stangenschlösser oder mechanische Zusatzsicherungen fachgerecht und sauber.
+                    Wirksame Einbruchsprävention verhindert unbefugte Zutritte, bevor überhaupt ein Schaden an Ihrer Immobilie entsteht. Im Rahmen unserer fundierten und herstellerneutralen <strong className="font-bold text-neutral-900">{`Einbruchschutz Beratung in ${city}`}</strong> analysieren wir Schwachstellen an Fenstern, Terrassentüren und Haupteingängen. Anschließend installieren wir robuste Querriegel, einbruchhemmende Panzerriegel, Stangenschlösser oder mechanische Zusatzsicherungen fachgerecht und sauber.
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-neutral-100 flex items-center justify-between">
@@ -842,15 +972,15 @@ export default function App() {
         <section className="w-[92%] max-w-6xl mx-auto py-16 md:py-24 border-t border-neutral-200/40" id="gebiete">
           <Reveal delay={0.1} className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-[clamp(1.6rem,4vw,2.5rem)] leading-tight font-extrabold tracking-tight text-neutral-950 mb-3">
-              Unsere Einsatzgebiete &amp; Verfügbarkeiten in Essen und dem Ruhrgebiet
+              Unsere Einsatzgebiete &amp; Verfügbarkeiten in {city} und dem Ruhrgebiet
             </h2>
             <p className="text-[13px] md:text-[14px] text-neutral-500 font-light leading-relaxed">
-              Als Ihr zuverlässiger lokaler Schlüsseldienst und Schlüsselnotdienst für Essen sind wir rund um die Uhr mit mehreren mobilen Monteuren im Einsatz. Dank strategisch verteilter Stützpunkte garantieren wir Ihnen extrem kurze Wartezeiten von 15 bis 30 Minuten in sämtlichen Essener Stadtteilen sowie im umliegenden Ruhrgebiet.
+              Als Ihr zuverlässiger lokaler Schlüsseldienst und Schlüsselnotdienst für {city} sind wir rund um die Uhr mit mehreren mobilen Monteuren im Einsatz. Dank strategisch verteilter Stützpunkte garantieren wir Ihnen extrem kurze Wartezeiten von 15 bis 30 Minuten in sämtlichen Stadtteilen in {city} sowie im umliegenden Ruhrgebiet.
             </p>
           </Reveal>
 
           <Reveal delay={0.15}>
-            <LocalMapSection />
+            <LocalMapSection onSelectCity={(cityName) => navigateTo('home', cityName)} />
           </Reveal>
           
           <div className="mt-8 px-4 max-w-6xl mx-auto">
@@ -979,19 +1109,19 @@ export default function App() {
             <div className="lg:col-span-7 flex flex-col gap-6">
               <Reveal delay={0.1}>
                 <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-950">
-                  Kostenzusammensetzung: Wie entstehen die Schlüsseldienst Essen Preise für eine Türöffnung?
+                  Kostenzusammensetzung: Wie entstehen die Schlüsseldienst {city} Preise für eine Türöffnung?
                 </h2>
               </Reveal>
 
               <Reveal delay={0.15} className="flex flex-col gap-3">
                 <p className="text-[14px] text-neutral-600 leading-relaxed font-normal">
-                  Viele ausgesperrte Betroffene fragen sich vor beziehungsweise nach dem dringenden Notruf verständlicherweise, wie sich die Schlüsseldienst Preise im Einzelnen zusammensetzen. Die Entstehung der tatsächlichen Schlüsseldienst Kosten für Türöffnungen und Notdiensteinsätze in Essen hängt im Wesentlichen von verschiedenen, nachvollziehbaren Faktoren ab:
+                  Viele ausgesperrte Betroffene fragen sich vor beziehungsweise nach dem dringenden Notruf verständlicherweise, wie sich die Schlüsseldienst Preise im Einzelnen zusammensetzen. Die Entstehung der tatsächlichen Schlüsseldienst Kosten für Türöffnungen und Notdiensteinsätze in {city} hängt im Wesentlichen von verschiedenen, nachvollziehbaren Faktoren ab:
                 </p>
                 <p className="text-[14px] text-neutral-600 leading-relaxed font-normal">
-                  Der erste und wichtigste Faktor ist die physische Beschaffenheit und der Zustand der versperrten Tür. Liegt lediglich eine zugefallene Wohnungstür vor, lässt sich diese fast immer ohne Beschädigung in wenigen Handgriffen durch den Schlüsselnotdienst Essen öffnen. Ein zweifach verriegeltes Schloss, Riegelbrüche oder eine elektronische Schließanlage hingegen verlangen den Einsatz von Bohrern und Zylinder-Fräsmaschinen, was naturgemäß einen höheren Arbeits- und Materialaufwand (z.B. Einbau eines neuen Ersatzschlosses) bedeutet.
+                  Der erste und wichtigste Faktor ist die physische Beschaffenheit und der Zustand der versperrten Tür. Liegt lediglich eine zugefallene Wohnungstür vor, lässt sich diese fast immer ohne Beschädigung in wenigen Handgriffen durch den Schlüsselnotdienst {city} öffnen. Ein zweifach verriegeltes Schloss, Riegelbrüche oder eine elektronische Schließanlage hingegen verlangen den Einsatz von Bohrern und Zylinder-Fräsmaschinen, was naturgemäß einen höheren Arbeits- und Materialaufwand (z.B. Einbau eines neuen Ersatzschlosses) bedeutet.
                 </p>
                 <p className="text-[14px] text-neutral-600 leading-relaxed font-normal">
-                  Darüber hinaus bestimmt die Tageszeit und der Wochentag den finalen Gesamtpreis. Einsätze während unserer regulären Geschäftszeiten an Werktagen sind besonders preiswert. Zu nächtlicher Stunde, am Wochenende oder an gesetzlichen Feiertagen fallen allgemein übliche Bereitschaftszuschläge an. Ein seriöser, kundenorientierter Schlüsseldienst in Essen bespricht sämtliche Faktoren jedoch direkt am Telefon mit Ihnen und klärt Sie fair und ehrlich auf, bevor der Einsatzwagen losfährt.
+                  Darüber hinaus bestimmt die Tageszeit und der Wochentag den finalen Gesamtpreis. Einsätze während unserer regulären Geschäftszeiten an Werktagen sind besonders preiswert. Zu nächtlicher Stunde, am Wochenende oder an gesetzlichen Feiertagen fallen allgemein übliche Bereitschaftszuschläge an. Ein seriöser, kundenorientierter Schlüsseldienst in {city} bespricht sämtliche Faktoren jedoch direkt am Telefon mit Ihnen und klärt Sie fair und ehrlich auf, bevor der Einsatzwagen losfährt.
                 </p>
               </Reveal>
 
@@ -1032,7 +1162,7 @@ export default function App() {
                 <div className="relative p-2.5 bg-white border border-neutral-200/60 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.02)] overflow-hidden group">
                   <img 
                     src="https://aktivschluesseldienst.de/wp-content/uploads/2023/10/aktiv-schluesseldienst_wechsel2-1024x683.jpeg" 
-                    alt="Schlosswechsel Essen - Professioneller Zylinderaustausch und Einbruchschutz Beratung an der Wohnungstür" 
+                    alt={`Schlosswechsel ${city} - Professioneller Zylinderaustausch und Einbruchschutz Beratung an der Wohnungstür`}
                     width={480}
                     height={360}
                     loading="lazy"
@@ -1047,7 +1177,7 @@ export default function App() {
             <div className="lg:col-span-7 flex flex-col gap-6 order-1 lg:order-2">
               <Reveal delay={0.1}>
                 <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-950">
-                  Zylindertausch &amp; Einbruchschutz: Wann sollte ein Türschloss in Essen gewechselt werden?
+                  Zylindertausch &amp; Einbruchschutz: Wann sollte ein Türschloss in {city} gewechselt werden?
                 </h2>
               </Reveal>
 
@@ -1056,7 +1186,7 @@ export default function App() {
                   Bei manchen Haus- und Wohnungstüren reicht eine bloße materialschonende Türöffnung im Nachhinein schlichtweg nicht aus, um Ihre volle Haussicherheit zu gewährleisten. Wenn Ihr verbautes Türschloss bereits veraltet, extrem verschlissen, mechanisch defekt oder im Zuge eines Einbruchversuchs grob beschädigt worden ist, zahlt sich ein rascher Schlossaustausch oder Zylinderwechsel unmittelbar aus. Ein zeitgemäßer Sicherheitszylinder mit Bohrschutz und Sicherungskarte wehrt unbefugte Einwirkungsversuche effektiv ab und schützt Ihre Familie wie auch Ihr Hab und Gut verlässlich.
                 </p>
                 <p className="text-[14px] text-neutral-600 leading-relaxed font-normal mt-2 font-bold text-neutral-900 font-sans">
-                  Häufige Gründe und Indikatoren für einen raschen, professionellen Schlosswechsel durch den Schlüsseldienst Essen:
+                  Häufige Gründe und Indikatoren für einen raschen, professionellen Schlosswechsel durch den Schlüsseldienst {city}:
                 </p>
               </Reveal>
 
@@ -1100,7 +1230,7 @@ export default function App() {
         {/* SECTION 9: INTERACTIVE BULLET TAGS KEYWORDS SECTION */}
         <section className="w-[92%] max-w-5xl mx-auto py-12 md:py-16 border-t border-neutral-200/45">
           <Reveal delay={0.1} className="mb-0 text-center">
-            <h4 className="text-xl font-extrabold tracking-tight text-neutral-950">Türengel 24 Std Schlüsseldienst in Essen</h4>
+            <h4 className="text-xl font-extrabold tracking-tight text-neutral-950">Türengel 24 Std Schlüsseldienst in {city}</h4>
           </Reveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1109,9 +1239,9 @@ export default function App() {
             <Reveal delay={0.15} className="bg-white border border-neutral-200/50 rounded-2xl p-6">
               <span className="font-mono text-[#2563EB] text-[10px] font-bold tracking-wider block mb-4 uppercase"># SCHLÜSSELDIENST</span>
               <div className="flex flex-col gap-2.5 text-xs text-neutral-600 font-medium">
-                <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Schlüsseldienst Essen</span>
-                <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Schlüsselnotdienst Essen</span>
-                <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Schlosswechsel Essen</span>
+                <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Schlüsseldienst {city}</span>
+                <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Schlüsselnotdienst {city}</span>
+                <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Schlosswechsel {city}</span>
                 <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Zylinderaustausch</span>
                 <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Einbruchschutz Beratung</span>
               </div>
@@ -1137,7 +1267,7 @@ export default function App() {
                 <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Tür zugefallen Hilfe</span>
                 <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Tür abgeschlossen Notdienst</span>
                 <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> fairer Notdienst</span>
-                <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Festpreisgarantie Essen</span>
+                <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]/60" /> Festpreisgarantie {city}</span>
               </div>
             </Reveal>
 
@@ -1152,7 +1282,8 @@ export default function App() {
               <div className="absolute inset-0 z-0 opacity-40">
                 <img 
                   src="https://xn--trengel-q9a.de/images/2026/05/12/schluesseldienst-schnell.png" 
-                  alt="Schlüsselnotdienst Essen - Mobiles Türengel Einsatzfahrzeug für schnelle Türöffnung im Ruhrgebiet"                   width={1024}
+                  alt={`Schlüsselnotdienst ${city} - Mobiles Türengel Einsatzfahrzeug für schnelle Türöffnung im Ruhrgebiet`}
+                  width={1024}
                   height={400}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
@@ -1164,10 +1295,10 @@ export default function App() {
               {/* Banner content */}
               <div className="relative z-20 max-w-xl flex flex-col gap-4">
                 <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
-                  Wie finden Sie einen zuverlässigen &amp; günstigen Schlüsseldienst in Essen?
+                  Wie finden Sie einen zuverlässigen &amp; günstigen Schlüsseldienst in {city}?
                 </h2>
                 <p className="text-xs md:text-sm text-neutral-300 leading-relaxed font-light">
-                  Sprechen Sie ohne Umwege direkt mit unseren lokalen Schlüsselnotdienst-Profis vor Ort. Wir stehen für uneingeschränkte, 24 Std. tägliche Erreichbarkeit im gesamten Ruhrgebiet, blitzschnelle Anfahrtszeiten unter 20 Minuten und absolut saubere, materialschonende, zerstörungsfreie Türöffnung ohne unfaire Preisschwankungen oder künstlich in die Höhe getriebene Rechnungen. Vertrauen Sie dem Original für Essen!
+                  Sprechen Sie ohne Umwege direkt mit unseren lokalen Schlüsselnotdienst-Profis vor Ort. Wir stehen für uneingeschränkte, 24 Std. tägliche Erreichbarkeit im gesamten Ruhrgebiet, blitzschnelle Anfahrtszeiten unter 20 Minuten und absolut saubere, materialschonende, zerstörungsfreie Türöffnung ohne unfaire Preisschwankungen oder künstlich in die Höhe getriebene Rechnungen. Vertrauen Sie dem Original für {city}!
                 </p>
               </div>
 
@@ -1181,7 +1312,7 @@ export default function App() {
                   <span>Jetzt anrufen: 0177 6721642</span>
                 </a>
                 <span className="text-[11px] font-mono tracking-widest uppercase font-bold text-white px-3 hidden sm:inline select-none">
-                  [ 24 Std Notdienst Essen ]
+                  [ 24 Std Notdienst {city} ]
                 </span>
               </div>
             </div>
@@ -1226,7 +1357,7 @@ export default function App() {
               <FAQItem 
                 index={5}
                 question="Ist der Schlüsseldienst rund um die Uhr erreichbar?"
-                answer="Ja, unser Schlüsselnotdienst ist für ganz Essen und das nahegelegene Ruhrgebiet an 365 Tagen im Jahr – auch an Feiertagen und mitten in der Nacht – vollauf besetzt. Sie sprechen bei uns direkt mit dem diensthabenden Techniker auf Mobiltelefon."
+                answer={`Ja, unser Schlüsselnotdienst ist für ganz ${city} und das nahegelegene Ruhrgebiet an 365 Tagen im Jahr – auch an Feiertagen und mitten in der Nacht – vollauf besetzt. Sie sprechen bei uns direkt mit dem diensthabenden Techniker auf Mobiltelefon.`}
               />
               <FAQItem 
                 index={6}
@@ -1238,60 +1369,67 @@ export default function App() {
         </section>
 
         {/* SECTION 12: "WARUM EIN LOKALER SCHLÜSSELNOTDIENST SINNVOLL IST" */}
-        <section className="w-[92%] max-w-5xl mx-auto py-16 md:py-24 border-t border-neutral-200/40">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
-            {/* Left side Image showing the store front / technician */}
-            <div className="lg:col-span-5 flex justify-center">
-              <Reveal delay={0.2} className="w-full">
-                <div className="relative p-2.5 bg-white border border-neutral-200/60 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.02)] overflow-hidden group">
-                  <img 
-                    src="https://gokey.at/wp-content/uploads/2024/09/Aufsperrdienst-1190-Wien-Locksmith-scaled.jpg" 
-                    alt="Aufsperrdienst Essen - Erfahrener Schlüsseldienst Techniker öffnet versperrtes Türschloss fachgerecht vor Ort" 
-                    width={480}
-                    height={360}
-                    loading="lazy"
-                    className="w-full h-auto rounded-2xl object-cover aspect-[4/3] sm:aspect-video lg:aspect-[4/3] group-hover:scale-[1.02] transition-transform duration-500"
-                    referrerPolicy="no-referrer"
-                  />
-                  {/* Subtle 24h store badge sticker */}
-                  <div className="absolute bottom-6 left-6 z-25 bg-neutral-950 text-white flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold font-mono tracking-widest shadow-lg">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" />
-                    <span>LOKAL VOR ORT</span>
-                  </div>
+        {(() => {
+          const activeSlug = getSlugForCity(city);
+          const seoData = CITY_SEO_MAP[activeSlug] || CITY_SEO_MAP['essen'];
+          const sampleDistricts = seoData.districts.slice(0, 5).join(', ');
+          return (
+            <section className="w-[92%] max-w-5xl mx-auto py-16 md:py-24 border-t border-neutral-200/40">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                {/* Left side Image showing the store front / technician */}
+                <div className="lg:col-span-5 flex justify-center">
+                  <Reveal delay={0.2} className="w-full">
+                    <div className="relative p-2.5 bg-white border border-neutral-200/60 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.02)] overflow-hidden group">
+                      <img 
+                        src="https://gokey.at/wp-content/uploads/2024/09/Aufsperrdienst-1190-Wien-Locksmith-scaled.jpg" 
+                        alt={`Aufsperrdienst ${city} - Erfahrener Schlüsseldienst Techniker öffnet versperrtes Türschloss fachgerecht vor Ort`}
+                        width={480}
+                        height={360}
+                        loading="lazy"
+                        className="w-full h-auto rounded-2xl object-cover aspect-[4/3] sm:aspect-video lg:aspect-[4/3] group-hover:scale-[1.02] transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                      {/* Subtle 24h store badge sticker */}
+                      <div className="absolute bottom-6 left-6 z-25 bg-neutral-950 text-white flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold font-mono tracking-widest shadow-lg">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" />
+                        <span>LOKAL VOR ORT</span>
+                      </div>
+                    </div>
+                  </Reveal>
                 </div>
-              </Reveal>
-            </div>
 
-            {/* Right side Text */}
-            <div className="lg:col-span-7 flex flex-col gap-6">
-              <Reveal delay={0.1}>
-                <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-950">
-                  Soforthilfe vor Ort: Warum ein lokaler Schlüsselnotdienst in Essen die beste Wahl ist
-                </h2>
-              </Reveal>
+                {/* Right side Text */}
+                <div className="lg:col-span-7 flex flex-col gap-6">
+                  <Reveal delay={0.1}>
+                    <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-950">
+                      Soforthilfe vor Ort: Warum ein lokaler Schlüsselnotdienst in {city} die beste Wahl ist
+                    </h2>
+                  </Reveal>
 
-              <Reveal delay={0.15}>
-                <p className="text-[14px] text-neutral-600 leading-relaxed font-normal">
-                  Ein ortsansässiger und fest verankerter Schlüsselnotdienst kennt die genauen Straßen, Schleichwege und gesamten Stadtbezirke in Essen (von Altenessen, Borbeck über Holsterhausen bis Werden oder Kettwig). Dadurch kann der beauftragte Schlüsseldienst Essen Techniker die Anfahrtswege und Fahrtzeiten im dichten Ruhrgebietsverkehr auf ein absolutes Minimum reduzieren und bereits nach durchschnittlich 15 bis 30 Minuten direkt an Ihrer Haustür eintreffen. Gerade im winterlichen Frost, bei strömendem Regen oder zu tiefer Nachtstunde zahlt sich jede Minute Wartezeitersparnis spürbar für Ihr Wohlbefinden aus.
-                </p>
-                <p className="text-[14px] text-neutral-600 leading-relaxed font-normal mt-1.5 font-sans">
-                  Zudem arbeitet ein regional ansässiges Familienunternehmen oder lokaler Fachbetrieb weitaus persönlicher und kundenfreundlicher als anonyme, oft dubiose bundesweite Vermittlungsportale oder Callcenter. Sie sprechen am Kundentelefon immer direkt mit einem versierten, echten Techniker vor Ort, der Sie individuell berät und vollumfänglich für die einwandfreie, schadensfreie Arbeit geradesteht. Kurze, transparente Wege bilden hierbei das Fundament für nachhaltiges Kundenvertrauen.
-                </p>
-                <p className="text-[14px] text-neutral-600 leading-relaxed font-normal mt-1.5 font-sans">
-                  Sollten Sie somit akute, kompetente Unterstützung bei einer Türöffnung, Autoöffnung oder Tresoröffnung benötigen oder Ihren individuellen Einbruchschutz mit mechanischen Zusatzsicherungen modernisieren wollen, rufen Sie uns direkt an. Unser bestens ausgerüstetes Einsatzfahrzeug macht sich nach Ihrem Anruf unverzüglich auf den Weg zu Ihnen.
-                </p>
-              </Reveal>
+                  <Reveal delay={0.15}>
+                    <p className="text-[14px] text-neutral-600 leading-relaxed font-normal">
+                      Ein ortsansässiger und fest verankerter Schlüsselnotdienst kennt die genauen Straßen, Schleichwege und gesamten Stadtbezirke in {city} ({sampleDistricts ? `wie ${sampleDistricts}` : ''}). Dadurch kann der beauftragte Schlüsseldienst {city} Techniker die Anfahrtswege und Fahrtzeiten im dichten Ruhrgebietsverkehr auf ein absolutes Minimum reduzieren und bereits nach durchschnittlich 15 bis 30 Minuten direkt an Ihrer Haustür eintreffen. Gerade im winterlichen Frost, bei strömendem Regen oder zu tiefer Nachtstunde zahlt sich jede Minute Wartezeitersparnis spürbar für Ihr Wohlbefinden aus.
+                    </p>
+                    <p className="text-[14px] text-neutral-600 leading-relaxed font-normal mt-1.5 font-sans">
+                      Zudem arbeitet ein regional ansässiges Familienunternehmen oder lokaler Fachbetrieb weitaus persönlicher und kundenfreundlicher als anonyme, oft dubiose bundesweite Vermittlungsportale oder Callcenter. Sie sprechen am Kundentelefon immer direkt mit einem versierten, echten Techniker vor Ort, der Sie individuell berät und vollumfänglich für die einwandfreie, schadensfreie Arbeit geradesteht. Kurze, transparente Wege bilden hierbei das Fundament für nachhaltiges Kundenvertrauen.
+                    </p>
+                    <p className="text-[14px] text-neutral-600 leading-relaxed font-normal mt-1.5 font-sans">
+                      Sollten Sie somit akute, kompetente Unterstützung bei einer Türöffnung, Autoöffnung oder Tresoröffnung benötigen oder Ihren individuellen Einbruchschutz mit mechanischen Zusatzsicherungen modernisieren wollen, rufen Sie uns direkt an. Unser bestens ausgerüstetes Einsatzfahrzeug macht sich nach Ihrem Anruf unverzüglich auf den Weg zu Ihnen.
+                    </p>
+                  </Reveal>
 
-              <Reveal delay={0.2} className="pt-2">
-                <a href="tel:+491776721642">
-                  <CTAButton text={`DIREKT HILFE IN ${city.toUpperCase()} RUFEN`} variant="accent" />
-                </a>
-              </Reveal>
-            </div>
+                  <Reveal delay={0.2} className="pt-2">
+                    <a href="tel:+491776721642">
+                      <CTAButton text={`DIREKT HILFE IN ${city.toUpperCase()} RUFEN`} variant="accent" />
+                    </a>
+                  </Reveal>
+                </div>
 
-          </div>
-        </section>
+              </div>
+            </section>
+          );
+        })()}
           </>
         )}
 

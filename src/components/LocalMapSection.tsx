@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Navigation, Clock, Building2, Phone, ArrowUpRight, Zap, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { getSlugForCity } from '../data/cityContent';
 
-export default function LocalMapSection() {
+interface LocalMapSectionProps {
+  onSelectCity?: (cityName: string) => void;
+}
+
+export default function LocalMapSection({ onSelectCity }: LocalMapSectionProps) {
   const [activeArea, setActiveArea] = useState<'essen' | 'umland'>('essen');
 
   // Essen local neighborhoods list for SEO density
@@ -268,21 +273,31 @@ export default function LocalMapSection() {
                     transition={{ duration: 0.15 }}
                     className="flex flex-col gap-2"
                   >
-                    {umlandCities.map((city) => (
-                      <div 
-                        key={city.name}
-                        className="group flex items-center justify-between bg-white border border-neutral-200/80 hover:border-[#2563EB]/40 px-4 py-2.5 rounded-2xl text-xs transition-all shadow-[0_2px_8px_rgba(0,0,0,0.015)] hover:shadow-md hover:translate-x-0.5"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-2 h-2 rounded-full bg-[#2563EB] group-hover:scale-125 transition-transform" />
-                          <span className="font-bold text-neutral-900">{city.name}</span>
-                          <span className="text-[10px] text-neutral-400 font-mono">({city.distance})</span>
-                        </div>
-                        <span className="text-[11px] font-mono text-[#2563EB] font-extrabold bg-[#2563EB]/5 px-2 py-1 rounded-lg border border-[#2563EB]/10">
-                          {city.time}
-                        </span>
-                      </div>
-                    ))}
+                    {umlandCities.map((cityItem) => {
+                      const slug = getSlugForCity(cityItem.name);
+                      return (
+                        <a 
+                          key={cityItem.name}
+                          href={`/schluesseldienst-${slug}`}
+                          onClick={(e) => {
+                            if (onSelectCity) {
+                              e.preventDefault();
+                              onSelectCity(cityItem.name);
+                            }
+                          }}
+                          className="group flex items-center justify-between bg-white border border-neutral-200/80 hover:border-[#2563EB]/40 px-4 py-2.5 rounded-2xl text-xs transition-all shadow-[0_2px_8px_rgba(0,0,0,0.015)] hover:shadow-md hover:translate-x-0.5 cursor-pointer block"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-2 h-2 rounded-full bg-[#2563EB] group-hover:scale-125 transition-transform" />
+                            <span className="font-bold text-neutral-900">{cityItem.name}</span>
+                            <span className="text-[10px] text-neutral-400 font-mono">({cityItem.distance})</span>
+                          </div>
+                          <span className="text-[11px] font-mono text-[#2563EB] font-extrabold bg-[#2563EB]/5 px-2 py-1 rounded-lg border border-[#2563EB]/10 group-hover:bg-[#2563EB] group-hover:text-white transition-all">
+                            {cityItem.time}
+                          </span>
+                        </a>
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>
